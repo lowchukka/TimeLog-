@@ -122,16 +122,21 @@ body,body.home-compact,body.calendar-compact,body.reports-compact{display:flex;f
 .reports-compact #main .listrow{min-height:44px;padding:5px 0;font-size:13px;line-height:1.2}
 @media(max-width:350px){#page-scroll{padding-inline:10px}.reports-compact #main .card{padding-inline:9px}}
 
-/* 3.0.18: use the actual containing viewport, not a separate dvh-sized shell.
-   Keep the exposed lower canvas the same color as the navigation. */
-html{height:100%;background:#121214;overscroll-behavior:none}
-body,body.home-compact,body.calendar-compact,body.reports-compact{position:fixed;inset:0;height:auto;min-height:0;background:#121214;overscroll-behavior:none}
-#page-scroll{background:#000000;overscroll-behavior:contain;padding-top:calc(24px + env(safe-area-inset-top,0px));padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px))}
-.home-compact #page-scroll,.calendar-compact #page-scroll,.reports-compact #page-scroll{padding-top:calc(24px + env(safe-area-inset-top,0px))}
-#overlay{padding-top:calc(24px + env(safe-area-inset-top,0px))}
-.nav,.home-compact .nav,.calendar-compact .nav{padding-bottom:calc(4px + env(safe-area-inset-bottom,0px));padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px))}
+/* 3.0.19: restore the normal document scroll and fixed viewport navigation
+   used before the nested scroll shell. The viewport, not a fixed body,
+   positions the nav; reserve its exact height in the document flow. */
+:root{--nav-height:calc(53px + env(safe-area-inset-bottom,0px))}
+html{height:auto;min-height:100%;overflow-x:hidden;overflow-y:auto;background:#000;overscroll-behavior-y:none}
+body,body.home-compact,body.calendar-compact,body.reports-compact{position:static;inset:auto;height:auto;min-height:100vh;max-width:none;overflow:visible;margin:0;padding:0 0 var(--nav-height);background:#000;display:flex;flex-direction:column}
+@supports(height:100dvh){body,body.home-compact,body.calendar-compact,body.reports-compact{height:auto;min-height:100dvh}}
+body:has(#nav:empty){padding-bottom:0}
+#page-scroll{flex:1 0 auto;min-height:0;overflow:visible;overscroll-behavior:auto;background:#000;padding:calc(22px + env(safe-area-inset-top,0px)) max(14px,env(safe-area-inset-right,0px)) 10px max(14px,env(safe-area-inset-left,0px))}
+.home-compact #page-scroll,.calendar-compact #page-scroll,.reports-compact #page-scroll{padding-top:calc(22px + env(safe-area-inset-top,0px))}
+.nav,.home-compact .nav,.calendar-compact .nav{position:fixed;inset:auto 0 0;min-height:0;height:var(--nav-height);padding:4px max(8px,env(safe-area-inset-right,0px)) calc(4px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px));align-content:start;z-index:4}
+.nav button,.home-compact .nav button,.calendar-compact .nav button{height:44px;min-height:44px}
+#overlay{padding-top:calc(22px + env(safe-area-inset-top,0px));z-index:30;overscroll-behavior:contain}
 @media(max-width:350px){#page-scroll{padding-left:max(10px,env(safe-area-inset-left,0px));padding-right:max(10px,env(safe-area-inset-right,0px))}}
-/* Allow the extra top clearance without forcing a scroll on medium-height phones. */
+/* Keep the large clock, but allow short screens and the extra pause action to fit. */
 @media(min-height:741px) and (max-height:900px){.home-compact #main>.card:first-child{padding-block:10px;gap:2px}.home-compact #main .timer{margin:4px 0;font-size:clamp(36px,14vw,62px)}}
 @media(max-height:860px){.home-compact #main:has(>.warn)>.card:first-child{padding-block:6px;gap:0}.home-compact #main:has(>.warn) .timer{font-size:clamp(32px,11.5vw,48px);margin:2px 0}}
 </style></head><body><div id="page-scroll"><header><h1 id="heading">TimeLog</h1><div id="subtitle" class="muted"></div><div id="sync" class="sync">Lokaler Speicher wird geprüft …</div><div id="error" class="error" role="alert"></div></header><main id="main"></main></div><nav class="nav" id="nav"></nav><section id="overlay" class="hidden"></section><script src="./app.js" defer></script></body></html>
