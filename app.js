@@ -1,7 +1,7 @@
 
-// TimeLog 3.0.47 — offline PWA; model parameters are imported locally.
+// TimeLog 3.0.48 — offline PWA; model parameters are imported locally.
 
-const VERSION = '3.0.47';
+const VERSION = '3.0.48';
 const MIN = 60000;
 function emptyState() { return {schema:1, revision:0, active:null, entries:[], credits:[], openings:{}}; }
 function assert(ok, message) { if (!ok) throw new Error(message); }

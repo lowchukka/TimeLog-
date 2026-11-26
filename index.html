@@ -233,8 +233,8 @@ html[data-theme="light"] .calendar .today{border-color:#62626b}
 html[data-theme="light"] .holidaytext{color:var(--blue)}
 html[data-theme="light"] .track{background:#dedee5}
 html[data-theme="light"] :is(.appearance-divider,.ckm-times,.ckm-preview,.ckm-table tbody tr,.report-row){border-color:var(--line)}
-/* iOS standalone black-translucent status bar uses light system glyphs: retain dark safe-area backing. */
-html[data-theme="light"] #page-scroll,html[data-theme="light"] #overlay{background:linear-gradient(to bottom,#000 0,#000 env(safe-area-inset-top,0px),var(--bg) env(safe-area-inset-top,0px),var(--bg) 100%)}
+/* 3.0.48: use the same solid theme background throughout the safe area; keep iOS standalone geometry. */
+html[data-theme="light"] #page-scroll,html[data-theme="light"] #overlay{background:var(--bg)}
 /* 3.0.46: consistent spacing including upper and lower content insets, six equal-width columns. */
 body.ckm-compact #page-scroll{--ckm-gap:12px;padding-bottom:0}
 body.ckm-compact #page-scroll>header{display:flow-root;margin-bottom:var(--ckm-gap)}
