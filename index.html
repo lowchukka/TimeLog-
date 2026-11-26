@@ -191,4 +191,14 @@ body.ckm-compact #page-scroll{padding-left:max(4px,env(safe-area-inset-left,0px)
 .ckm-table thead th{font-size:clamp(9px,2.65vw,11px);line-height:1.15}
 .ckm-table tbody td:nth-child(2),.ckm-table thead th:nth-child(2){text-align:center}.ckm-table tbody td:first-child,.ckm-table thead th:first-child{padding-left:2px}.ckm-table tbody td:last-child,.ckm-table thead th:last-child{padding-right:2px}
 .ckm-table .ckm-money{font-variant-numeric:tabular-nums;overflow-wrap:anywhere;word-break:break-word;text-align:right}.ckm-card+.full{margin-top:6px}
+
+/* 3.0.41: CKM-only balanced margins and lighter summary typography. */
+body.ckm-compact #page-scroll{padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}
+.ckm-card{padding:6px 8px!important}
+.ckm-table th,.ckm-table td{padding-left:1px;padding-right:1px}
+.ckm-table tbody td:first-child,.ckm-table thead th:first-child{padding-left:1px}
+.ckm-table tbody td:last-child,.ckm-table thead th:last-child{padding-right:1px}
+.ckm-stat .label{font-weight:600}
+.ckm-stat .num{font-weight:500;font-size:clamp(22px,7.8vw,40px);letter-spacing:-.6px;overflow-wrap:anywhere;min-width:0}
+@media(max-width:350px){body.ckm-compact #page-scroll{padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px))}.ckm-card{padding-inline:5px!important}.ckm-stat{padding-inline:10px}}
 </style></head><body><div id="page-scroll"><header><h1 id="heading">TimeLog</h1><div id="subtitle" class="muted"></div><div id="sync" class="sync">Lokaler Speicher wird geprüft …</div><div id="error" class="error" role="alert"></div></header><main id="main"></main></div><nav class="nav" id="nav"></nav><section id="overlay" class="hidden"></section><script src="./app.js" defer></script></body></html>

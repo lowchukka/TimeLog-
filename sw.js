@@ -1,4 +1,4 @@
-const CACHE='arbeitszeit-3.0.40';
+const CACHE='arbeitszeit-3.0.41';
 const ASSETS=['./index.html','./app.js','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS))));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('arbeitszeit-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
