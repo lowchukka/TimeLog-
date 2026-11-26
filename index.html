@@ -84,8 +84,19 @@ body,body.home-compact,body.calendar-compact,body.reports-compact{display:flex;f
 .nav,.home-compact .nav,.calendar-compact .nav{position:relative;inset:auto;flex:0 0 auto;min-height:0;align-content:normal;padding:4px 8px calc(4px + env(safe-area-inset-bottom,0px));z-index:4}
 .nav:empty{display:none}.nav button,.home-compact .nav button,.calendar-compact .nav button{min-height:44px;padding:3px 2px}
 #overlay{z-index:30}
-.home-compact #main{display:flex;flex-direction:column;flex:1 0 auto;justify-content:space-between}
-.home-compact #main>.card:first-child{flex:1 0 auto;display:flex;flex-direction:column;justify-content:center;max-height:230px}
+/* Today: fixed gaps; only the timer card grows into spare space. */
+.home-compact header h1{font-size:28px;line-height:1.2;margin:0 0 3px}
+.home-compact #subtitle{font-size:15px;line-height:1.3}
+.home-compact .sync{font-size:11px;line-height:1.25;margin:4px 0}
+.home-compact #main{display:flex;flex-direction:column;flex:1 0 auto;justify-content:flex-start;gap:8px;padding-top:4px}
+.home-compact #main>*{flex:0 0 auto}
+.home-compact #main>.card,.home-compact #main>.full,.home-compact #main>.home-summary{margin:0}
+.home-compact #main>.card:first-child{flex:1 0 auto;display:flex;flex-direction:column;justify-content:space-between;max-height:none;padding-block:14px;gap:4px}
+.home-compact #main .timer{font-size:clamp(36px,15vw,68px);line-height:1.1;margin:8px 0;white-space:nowrap;overflow-wrap:normal}
+@media(max-height:740px){.home-compact #main .timer{font-size:clamp(32px,12vw,50px)}}
+/* An active pause adds another 44px action; keep the card compact on shorter screens. */
+@media(max-height:860px){.home-compact #main:has(>.warn)>.card:first-child{padding-block:8px;gap:0}.home-compact #main:has(>.warn) .timer{font-size:clamp(32px,12vw,50px);margin:4px 0}}
+.home-compact #main .track{margin-top:9px;flex:none}
 .home-compact #main .home-more{background:#3a3a3c;border:0;color:#fff;font-size:14px}
 .home-compact #main .full{flex:none}
 .calendar-compact .calendar-day .listrow,.calendar-compact .calendar-actions button{min-height:44px}
