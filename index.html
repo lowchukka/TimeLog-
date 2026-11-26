@@ -1,76 +1,113 @@
 <!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>TimeLog</title><meta name="theme-color" content="#000000"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="TimeLog"><link rel="manifest" href="./manifest.webmanifest"><link rel="apple-touch-icon" href="./icon-192.png"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"><style>
-:root{color-scheme:dark;--bg:#000000;--card:#1c1c1e;--muted:#b0b0b5;--blue:#8db7ff;--green:#6ee7a3;--red:#ff9292}*{box-sizing:border-box}body{margin:0;padding:22px 18px 100px;background:var(--bg);color:#f5f5f7;font:16px -apple-system,BlinkMacSystemFont,sans-serif}h1{font-size:32px;letter-spacing:-1px;margin:9px 0 4px}h2{font-size:20px;margin:0 0 12px}p{margin:8px 0}.muted,small{color:var(--muted)}.label{font-size:11px;font-weight:700;letter-spacing:1.1px;color:var(--muted);text-transform:uppercase}.card{background:var(--card);padding:19px;border-radius:22px;margin:12px 0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.grid .card{margin:0}.num{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;margin:8px 0}.timer{font-size:clamp(36px,11vw,60px);text-align:center;font-variant-numeric:tabular-nums;font-weight:700;letter-spacing:-2px;margin:18px 0}.center{text-align:center}.track{height:7px;border-radius:7px;background:#38383a;overflow:hidden;margin:20px 0 10px}.bar{height:100%;background:#34d399;width:0%;border-radius:7px}button{font:inherit;font-weight:600;color:#fff;background:#3a3a3c;border:0;border-radius:14px;padding:14px 12px;min-height:44px;-webkit-appearance:none;cursor:pointer}button:disabled{opacity:.45}button.primary{background:#207c4a}button.warn{background:#a46513}button.danger{background:#9f3043}.full{width:100%;margin-top:10px}.row{display:flex;align-items:center;justify-content:space-between;gap:12px}.listrow{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;border-radius:0;background:none;text-align:left;padding:13px 0;border-bottom:1px solid #3a3a3c;font-weight:400}.listrow:last-child{border-bottom:0}.listrow small{display:block;margin-top:5px}.pos{color:var(--green)}.neg{color:var(--red)}.nav{position:fixed;bottom:0;left:0;right:0;padding:8px 10px max(12px,env(safe-area-inset-bottom));background:#121214;border-top:1px solid #3a3a3c;display:grid;grid-template-columns:repeat(4,1fr);gap:5px;z-index:4}.nav button{font-size:12px;background:transparent;color:var(--muted);padding:8px 2px}.nav button.sel{color:#ffffff;background:#39393c}.nav b{display:block;font-size:19px;margin-bottom:4px}.sync{font-size:12px;margin:14px 0;color:var(--green)}.error{color:var(--red);white-space:pre-wrap}.hidden{display:none!important}label{display:block;margin:12px 0 5px;color:var(--muted);font-size:13px}input,select,textarea{width:100%;min-width:0;background:#000000;color:#fff;border:1px solid #707074;border-radius:10px;padding:12px;font:16px -apple-system,sans-serif;min-height:44px}textarea{min-height:75px}#overlay{position:fixed;inset:0;background:#000000;z-index:6;overflow:auto;padding:22px 18px 60px}.pill{font-size:12px;color:var(--blue)}.sub{font-size:13px;line-height:1.45}.month{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:18px 0}.month button{min-width:46px}.calendar{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}.calendar button{padding:6px 0;background:#303032;min-height:48px;font-size:13px}.calendar .ok{background:#24543e}.calendar .off{background:#242426;color:#b0b0b5}.calendar .picked{outline:2px solid #ffffff}.calendar small{display:block;font-size:9px;margin-top:4px}.footer{font-size:12px;color:var(--muted);text-align:center;margin-top:18px}
+:root{color-scheme:dark;--bg:#000000;--card:#1c1c1e;--muted:#b0b0b5;--blue:#8db7ff;--green:#6ee7a3;--red:#ff9292}*{box-sizing:border-box}body{margin:0;padding:22px 18px 100px;background:var(--bg);color:#f5f5f7;font:16px -apple-system,BlinkMacSystemFont,sans-serif}h1{font-size:32px;letter-spacing:-1px;margin:9px 0 4px}h2{font-size:20px;margin:0 0 12px}p{margin:8px 0}.muted,small{color:var(--muted)}.label{font-size:11px;font-weight:700;letter-spacing:1.1px;color:var(--muted);text-transform:uppercase}.card{background:var(--card);padding:19px;border-radius:22px;margin:12px 0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.grid .card{margin:0}.num{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;margin:8px 0}.timer{font-size:clamp(36px,11vw,60px);text-align:center;font-variant-numeric:tabular-nums;font-weight:700;letter-spacing:-2px;margin:18px 0}.center{text-align:center}.track{height:7px;border-radius:7px;background:#38383a;overflow:hidden;margin:20px 0 10px}.bar{height:100%;background:#34d399;width:0%;border-radius:7px}button{font:inherit;font-weight:600;color:#fff;background:#3a3a3c;border:0;border-radius:14px;padding:14px 12px;min-height:44px;-webkit-appearance:none;cursor:pointer}button:disabled{opacity:.45}button.primary{background:#207c4a}button.warn{background:#a46513}button.danger{background:#9f3043}.full{width:100%;margin-top:10px}.row{display:flex;align-items:center;justify-content:space-between;gap:12px}.listrow{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;border-radius:0;background:none;text-align:left;padding:13px 0;border-bottom:1px solid #3a3a3c;font-weight:400}.listrow:last-child{border-bottom:0}.listrow small{display:block;margin-top:5px}.pos{color:var(--green)}.neg{color:var(--red)}.nav{position:fixed;left:0;right:0;bottom:0;padding:6px 10px calc(env(safe-area-inset-bottom,0px) + 2px);min-height:calc(58px + env(safe-area-inset-bottom,0px));background:#121214;border-top:1px solid #3a3a3c;display:grid;grid-template-columns:repeat(4,1fr);gap:5px;z-index:20;align-content:start}.nav button{font-size:12px;background:transparent;color:var(--muted);padding:8px 2px}.nav button.sel{color:#ffffff;background:#39393c}.nav b{display:block;font-size:19px;margin-bottom:4px}.sync{font-size:12px;margin:14px 0;color:var(--green)}.error{color:var(--red);white-space:pre-wrap}.hidden{display:none!important}label{display:block;margin:12px 0 5px;color:var(--muted);font-size:13px}input,select,textarea{width:100%;min-width:0;background:#000000;color:#fff;border:1px solid #707074;border-radius:10px;padding:12px;font:16px -apple-system,sans-serif;min-height:44px}textarea{min-height:75px}#overlay{position:fixed;inset:0;background:#000000;z-index:6;overflow:auto;padding:22px 18px 60px}.pill{font-size:12px;color:var(--blue)}.sub{font-size:13px;line-height:1.45}.month{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:18px 0}.month button{min-width:46px}.calendar{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}.calendar button{padding:6px 0;background:#303032;min-height:48px;font-size:13px}.calendar .ok{background:#24543e}.calendar .off{background:#242426;color:#b0b0b5}.calendar .picked{outline:2px solid #ffffff}.calendar small{display:block;font-size:9px;margin-top:4px}.footer{font-size:12px;color:var(--muted);text-align:center;margin-top:18px}
 
-html{width:100%;overflow-x:hidden;-webkit-text-size-adjust:100%}body{max-width:720px;margin:0 auto;padding:22px 16px calc(110px + env(safe-area-inset-bottom,0px));overflow-wrap:anywhere}main,header,.card,.grid>*{min-width:0}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.calendar{grid-template-columns:repeat(5,minmax(0,1fr))}.row>*{min-width:0}.listrow>span:first-child{flex:1;min-width:0}.listrow>span:last-child,.listrow>strong{flex-shrink:0}.num{font-size:clamp(18px,5.7vw,26px)}.nav{grid-template-columns:repeat(4,minmax(0,1fr));padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))}.nav button{min-width:0;font-size:clamp(10px,3vw,12px)}#overlay{padding:20px 16px calc(90px + env(safe-area-inset-bottom,0px));overscroll-behavior:contain}input[type=datetime-local],input[type=date],input[type=time]{display:block;max-width:100%;-webkit-appearance:none}input::-webkit-date-and-time-value{text-align:left}input[type=checkbox]{appearance:auto;-webkit-appearance:checkbox;width:22px;min-height:22px;flex:none;accent-color:#34d399}.check{display:flex;align-items:center;gap:9px;font-size:14px}.confirmbox{border:1px solid #a34c57;border-radius:12px;padding:12px;margin-top:10px}.card .row strong{text-align:right}@media(max-width:350px){body{padding-left:10px;padding-right:10px}.card{padding:12px}.calendar{gap:2px}.calendar button{font-size:12px}.calendar small{font-size:8px}}
+html{width:100%;min-height:100%;overflow-x:hidden;-webkit-text-size-adjust:100%}body{min-height:100svh}@supports (height: 100dvh){body{min-height:100dvh}}body{max-width:720px;margin:0 auto;padding:22px 16px calc(110px + env(safe-area-inset-bottom,0px));overflow-wrap:anywhere}main,header,.card,.grid>*{min-width:0}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.calendar{grid-template-columns:repeat(5,minmax(0,1fr))}.row>*{min-width:0}.listrow>span:first-child{flex:1;min-width:0}.listrow>span:last-child,.listrow>strong{flex-shrink:0}.num{font-size:clamp(18px,5.7vw,26px)}.nav{grid-template-columns:repeat(4,minmax(0,1fr));padding-bottom:calc(env(safe-area-inset-bottom,0px) + 2px)}.nav button{min-width:0;font-size:clamp(10px,3vw,12px)}#overlay{padding:20px 16px calc(90px + env(safe-area-inset-bottom,0px));overscroll-behavior:contain}input[type=datetime-local],input[type=date],input[type=time]{display:block;max-width:100%;-webkit-appearance:none}input::-webkit-date-and-time-value{text-align:left}input[type=checkbox]{appearance:auto;-webkit-appearance:checkbox;width:22px;min-height:22px;flex:none;accent-color:#34d399}.check{display:flex;align-items:center;gap:9px;font-size:14px}.confirmbox{border:1px solid #a34c57;border-radius:12px;padding:12px;margin-top:10px}.card .row strong{text-align:right}@media(max-width:350px){body{padding-left:10px;padding-right:10px}.card{padding:12px}.calendar{gap:2px}.calendar button{font-size:12px}.calendar small{font-size:8px}}
 .calendar .holiday{background:#285ca3;color:#fff;box-shadow:inset 0 0 0 1px #8db7ff}.holidaytext{color:#8db7ff}.calendar .sick{background:#9f3043;color:#fff}.calendar .vacation{background:#a65b16;color:#fff}.calendar .credit{background:#45536a;color:#fff}.calendar .holiday small,.calendar .sick small,.calendar .vacation small,.calendar .credit small,.calendar .ok small{color:#fff}.calendar.seven{grid-template-columns:repeat(7,minmax(0,1fr))}.callegend{display:flex;flex-wrap:wrap;gap:8px 14px;margin:14px 0 4px;font-size:12px;color:var(--muted)}.callegend span{display:flex;align-items:center;gap:6px}.callegend i{width:10px;height:10px;border-radius:3px;display:inline-block}.weekendtoggle{font-size:12px;min-height:44px;margin-top:12px;width:100%}.calendar small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 html,body,button,input,select,textarea,a{touch-action:manipulation} .calendar button{touch-action:manipulation;min-width:0;overflow:hidden} .calendar .today{border:1px solid #a1a1a6} .daily-total{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:12px;font-size:14px}.daily-total strong{font-variant-numeric:tabular-nums}
 #main.month-swipe{touch-action:pan-y pinch-zoom}.swipe-hint{text-align:center;font-size:12px;color:var(--muted);margin:-8px 0 15px}
 body{padding-top:calc(22px + env(safe-area-inset-top,0px))}#overlay{padding-top:calc(20px + env(safe-area-inset-top,0px))}
 /* Compact UI: keep touch targets and native input text legible. */
-body{font-size:15px;line-height:1.35;padding:calc(12px + env(safe-area-inset-top,0px)) 14px calc(88px + env(safe-area-inset-bottom,0px))}
+body{font-size:15px;line-height:1.35;padding:calc(10px + env(safe-area-inset-top,0px)) 14px calc(72px + env(safe-area-inset-bottom,0px))}
 h1{font-size:28px;margin:5px 0 2px}h2{font-size:18px;line-height:1.25;margin:0 0 8px}p{margin:6px 0}small{font-size:12px}.label{font-size:10px;letter-spacing:.8px}
 .card{padding:14px;border-radius:18px;margin:9px 0}.grid{gap:8px}.num{font-size:clamp(18px,5.4vw,24px);margin:5px 0}.timer{font-size:clamp(34px,10vw,54px);margin:10px 0}.track{margin:12px 0 7px;height:6px}.daily-total{margin-top:8px;font-size:13px}
 button{padding:9px 10px;border-radius:12px;min-height:44px}.full{margin-top:7px}.row,.listrow{gap:8px}.listrow{padding:8px 0;min-height:44px}.listrow small{margin-top:3px}.sync{margin:7px 0;font-size:11px}.sub{font-size:12px;line-height:1.4}
 .month{margin:10px 0;gap:6px}.month button{min-width:44px}.swipe-hint{margin:-3px 0 9px;font-size:11px}.calendar button{min-height:44px;padding:4px 0}.calendar small{margin-top:3px}.callegend{margin:9px 0 3px;gap:5px 10px;font-size:11px}.weekendtoggle{margin-top:7px}
-.nav{padding:5px 8px calc(5px + env(safe-area-inset-bottom,0px));gap:4px}.nav button{padding:5px 2px;min-height:48px;font-size:clamp(10px,2.8vw,12px)}.nav b{font-size:17px;margin-bottom:2px}.footer{margin-top:12px}
+.nav{padding:4px 8px calc(env(safe-area-inset-bottom,0px) + 2px);gap:4px}.nav button{padding:4px 2px;min-height:44px;font-size:clamp(10px,2.8vw,12px)}.nav b{font-size:17px;margin-bottom:1px}.footer{margin-top:12px}
 #overlay{padding:calc(12px + env(safe-area-inset-top,0px)) 14px calc(48px + env(safe-area-inset-bottom,0px))}.dialog-header{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px}.dialog-header h2{margin:0;overflow-wrap:break-word}.dialog-close{white-space:nowrap;overflow-wrap:normal;min-width:44px;padding:8px 12px;font-size:14px}
 label{margin:8px 0 4px;font-size:12px}input,select,textarea{font-size:16px;padding:8px 10px;min-height:44px}textarea{min-height:64px}input[type=file]{max-width:100%;font-size:14px}.check{font-size:13px}input[type=checkbox]{min-height:22px}.confirmbox{padding:10px;margin-top:8px}.error:empty{display:none}
 .report-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:baseline;padding:1px 0}.report-row strong{white-space:nowrap;overflow-wrap:normal;font-variant-numeric:tabular-nums}.report-summary{padding-bottom:3px;margin-bottom:3px;border-bottom:1px solid #3a3a3c}.report-total{border-top:1px solid #3a3a3c;margin-top:3px;padding-top:4px;font-weight:600}
 @media(max-width:350px){body,#overlay{padding-left:10px;padding-right:10px}.card{padding:11px}.dialog-close{padding-inline:9px}.report-row{gap:5px}.label{letter-spacing:.5px}}
 
 /* Today only: tighter visual rhythm, retain 44px touch targets and safe-area scroll fallback. */
-body.home-compact{padding-top:calc(6px + env(safe-area-inset-top,0px));padding-bottom:calc(61px + env(safe-area-inset-bottom,0px))}
-.home-compact header h1{font-size:25px;line-height:1.15;margin:0 0 2px}
-.home-compact #subtitle{font-size:13px;line-height:1.25}
-.home-compact .sync{font-size:11px;line-height:1.2;margin:4px 0}
-.home-compact #main .card{padding:10px 12px;border-radius:16px;margin:6px 0}
-.home-compact #main .grid{gap:7px}
+body.home-compact{padding-top:calc(4px + env(safe-area-inset-top,0px));padding-bottom:calc(56px + env(safe-area-inset-bottom,0px));overflow:hidden}
+.home-compact header h1{font-size:24px;line-height:1.12;margin:0 0 1px}
+.home-compact #subtitle{font-size:12px;line-height:1.2}
+.home-compact .sync{font-size:11px;line-height:1.15;margin:2px 0}
+.home-compact #main .card{padding:9px 11px;border-radius:15px;margin:5px 0}
+.home-compact #main .grid{gap:6px}
 .home-compact #main .grid .card{margin:0;min-width:0}
-.home-compact #main .num{font-size:clamp(17px,5.1vw,22px);line-height:1.15;margin:3px 0}
+.home-compact #main .num{font-size:clamp(17px,5vw,21px);line-height:1.12;margin:2px 0}
 .home-compact #main small{font-size:11px;line-height:1.25}
-.home-compact #main .timer{font-size:clamp(32px,9.3vw,48px);line-height:1.15;margin:5px 0}
-.home-compact #main .center{font-size:13px;margin:3px 0}
-.home-compact #main .track{height:5px;margin:7px 0 4px}
-.home-compact #main .daily-total{font-size:12px;margin-top:4px}
-.home-compact #main .full{margin-top:5px;min-height:44px;padding:7px 10px;font-size:14px}
+.home-compact #main .timer{font-size:clamp(31px,8.8vw,45px);line-height:1.1;margin:4px 0}
+.home-compact #main .center{font-size:12px;margin:2px 0}
+.home-compact #main .track{height:5px;margin:6px 0 3px}
+.home-compact #main .daily-total{font-size:12px;margin-top:3px}
+.home-compact #main .full{margin-top:4px;min-height:44px;padding:6px 10px;font-size:14px}
 .home-compact #main .home-more{background:transparent;border:1px solid #38383a;color:var(--muted);font-size:13px}
-.home-compact #main .home-summary{margin-top:7px}
+.home-compact #main .home-summary{margin-top:5px}
 .home-compact #main .home-summary .card:first-child small{display:block;white-space:nowrap;overflow-wrap:normal;font-size:clamp(10px,2.8vw,11px)}
-.home-compact #main .home-absence{padding:4px 12px}
-.home-compact #main .home-absence .listrow{padding:5px 0;font-size:14px}
+.home-compact #main .home-absence{padding:2px 10px}
+.home-compact #main .home-absence .listrow{padding:4px 0;font-size:13px}
 .home-compact #main .home-absence .listrow small{margin-top:2px}
-.home-compact .nav{padding-top:4px;padding-bottom:calc(4px + env(safe-area-inset-bottom,0px))}
-.home-compact .nav button{min-height:44px;padding:3px 2px}
+.home-compact .nav{padding-top:3px;padding-bottom:calc(env(safe-area-inset-bottom,0px) + 1px)}
+.home-compact .nav button{min-height:42px;padding:2px 2px}
 .home-compact .nav b{font-size:16px;margin-bottom:1px}
 @media(max-width:350px){.home-compact #main .card{padding-left:9px;padding-right:9px}}
 
 /* Calendar density and common vector navigation. Keep page scrolling as a fallback. */
-.nav button svg{display:block;width:21px;height:21px;margin:0 auto 2px;flex:none}
+.nav button svg{display:block;width:21px;height:21px;margin:0 auto 1px;flex:none}
 .nav button span{display:block;line-height:1.2}
-body.calendar-compact{padding-top:calc(6px + env(safe-area-inset-top,0px));padding-bottom:calc(61px + env(safe-area-inset-bottom,0px))}
-.calendar-compact header h1{font-size:25px;line-height:1.15;margin:0 0 2px}
-.calendar-compact #subtitle{font-size:12px;line-height:1.25}
-.calendar-compact .sync{font-size:11px;line-height:1.2;margin:4px 0}
-.calendar-compact .month{margin:5px 0;gap:6px}
+body.calendar-compact{padding-top:calc(4px + env(safe-area-inset-top,0px));padding-bottom:calc(58px + env(safe-area-inset-bottom,0px))}
+.calendar-compact header h1{font-size:24px;line-height:1.12;margin:0 0 1px}
+.calendar-compact #subtitle{font-size:11px;line-height:1.2}
+.calendar-compact .sync{font-size:11px;line-height:1.15;margin:2px 0}
+.calendar-compact .month{margin:4px 0;gap:5px}
 .calendar-compact .month button{min-height:44px;padding:3px 10px}
 .calendar-compact .swipe-hint{display:none}
-.calendar-compact #main .card{padding:9px 10px;border-radius:15px;margin:6px 0}
+.calendar-compact #main .card{padding:8px 10px;border-radius:15px;margin:5px 0}
 .calendar-compact .calendar{gap:3px}
 .calendar-compact .calendar button{height:44px;min-height:44px;padding:2px 0;border-radius:8px;font-size:13px;line-height:1.15}
 .calendar-compact .calendar small{margin-top:2px;font-size:10px;line-height:1.1}
-.calendar-compact .callegend{margin:6px 0 0;gap:3px 9px;font-size:10px;line-height:1.15}
+.calendar-compact .callegend{margin:4px 0 0;gap:3px 8px;font-size:10px;line-height:1.1}
 .calendar-compact .callegend span{gap:4px}
 .calendar-compact .callegend i{width:8px;height:8px;flex:none}
 .calendar-compact .month-weekends{margin:0;min-height:44px;width:auto;padding:4px 8px;font-size:11px;white-space:nowrap;flex:none}.calendar-compact .month strong{font-size:14px;text-align:center;min-width:0;flex:1}
 .calendar-compact .calendar-month .holidaytext{margin:3px 0;font-size:11px;line-height:1.2}
-.calendar-compact .calendar-day h2{font-size:16px;margin:0 0 3px}
-.calendar-compact .calendar-day p{margin:4px 0;font-size:12px}
-.calendar-compact .calendar-day .listrow{padding:4px 0;min-height:44px;font-size:13px;line-height:1.2}
+.calendar-compact .calendar-day h2{font-size:15px;margin:0 0 2px}
+.calendar-compact .calendar-day p{margin:3px 0;font-size:12px}
+.calendar-compact .calendar-day .listrow{padding:3px 0;min-height:42px;font-size:13px;line-height:1.15}
 .calendar-compact .calendar-day .listrow small{font-size:11px;line-height:1.2;margin-top:2px}
 .calendar-compact .calendar-day .row{font-size:13px}
 .calendar-compact .calendar-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
-.calendar-compact .calendar-actions button{font-size:12px;padding:5px 3px;min-height:44px;margin-top:5px}
-.calendar-compact .nav{padding-top:4px;padding-bottom:calc(4px + env(safe-area-inset-bottom,0px))}
+.calendar-compact .calendar-actions button{font-size:12px;padding:4px 3px;min-height:42px;margin-top:4px}
+.calendar-compact .nav{padding-top:3px;padding-bottom:calc(env(safe-area-inset-bottom,0px) + 1px)}
 .calendar-compact .nav button{min-height:44px;padding:3px 2px}
 @media(max-width:350px){.calendar-compact #main .card{padding-inline:8px}.calendar-compact .calendar{gap:2px}.calendar-compact .calendar small{font-size:9px}}
-</style></head><body><header><h1 id="heading">TimeLog</h1><div id="subtitle" class="muted"></div><div id="sync" class="sync">Lokaler Speicher wird geprüft …</div><div id="error" class="error" role="alert"></div></header><main id="main"></main><nav class="nav" id="nav"></nav><section id="overlay" class="hidden"></section><script src="./app.js" defer></script></body></html>
+
+/* Full-height app shell: the navigation occupies its own row; only content scrolls. */
+html{height:100%;overflow:hidden;background:#121214}
+body,body.home-compact,body.calendar-compact,body.reports-compact{display:flex;flex-direction:column;height:100%;min-height:0;max-width:none;padding:0;overflow:hidden;margin:0}
+@supports(height:100dvh){body,body.home-compact,body.calendar-compact,body.reports-compact{height:100dvh}}
+#page-scroll{flex:1 1 0;min-height:0;width:100%;max-width:720px;margin:0 auto;overflow-y:auto;overflow-x:hidden;overscroll-behavior-y:contain;padding:calc(10px + env(safe-area-inset-top,0px)) 14px 10px;display:flex;flex-direction:column}
+#page-scroll>header,#page-scroll>main{flex:none;min-width:0}
+.home-compact #page-scroll,.calendar-compact #page-scroll,.reports-compact #page-scroll{padding-top:calc(6px + env(safe-area-inset-top,0px))}
+.nav,.home-compact .nav,.calendar-compact .nav{position:relative;inset:auto;flex:0 0 auto;min-height:0;align-content:normal;padding:4px 8px calc(4px + env(safe-area-inset-bottom,0px));z-index:4}
+.nav:empty{display:none}.nav button,.home-compact .nav button,.calendar-compact .nav button{min-height:44px;padding:3px 2px}
+#overlay{z-index:30}
+.home-compact #main{display:flex;flex-direction:column;flex:1 0 auto;justify-content:space-between}
+.home-compact #main>.card:first-child{flex:1 0 auto;display:flex;flex-direction:column;justify-content:center;max-height:230px}
+.home-compact #main .home-more{background:#3a3a3c;border:0;color:#fff;font-size:14px}
+.home-compact #main .full{flex:none}
+.calendar-compact .calendar-day .listrow,.calendar-compact .calendar-actions button{min-height:44px}
+/* Reports: same density as calendar and today; detail lists remain scrollable. */
+.reports-compact header h1{font-size:25px;line-height:1.15;margin:0 0 2px}
+.reports-compact #subtitle{font-size:12px;line-height:1.25}
+.reports-compact .sync{font-size:11px;line-height:1.2;margin:4px 0}
+.reports-compact .month{margin:5px 0 7px;gap:6px}
+.reports-compact .month button{min-height:44px;padding:3px 10px}
+.reports-compact .swipe-hint{display:none}
+.reports-compact #main>h2{font-size:16px;margin:5px 0}
+.reports-compact #main .card{padding:10px 12px;border-radius:16px;margin:6px 0}
+.reports-compact #main .grid{gap:7px}
+.reports-compact #main .grid .card{margin:0;min-width:0}
+.reports-compact #main .num{font-size:clamp(18px,5.1vw,22px);line-height:1.2;margin:4px 0}
+.reports-compact #main small{font-size:11px;line-height:1.25}
+.reports-compact #main small:empty{display:none}
+.reports-compact #main .card h2{font-size:16px;margin:0 0 4px}
+.reports-compact #main .sub{font-size:11px;line-height:1.3;margin:3px 0}
+.reports-compact .report-row{font-size:13px;line-height:1.3;padding:1px 0}
+.reports-compact .report-total{padding-top:4px}
+.reports-compact #main .full{min-height:44px;margin-top:5px;padding:6px 10px;font-size:14px}
+.reports-compact #main .listrow{min-height:44px;padding:5px 0;font-size:13px;line-height:1.2}
+@media(max-width:350px){#page-scroll{padding-inline:10px}.reports-compact #main .card{padding-inline:9px}}
+</style></head><body><div id="page-scroll"><header><h1 id="heading">TimeLog</h1><div id="subtitle" class="muted"></div><div id="sync" class="sync">Lokaler Speicher wird geprüft …</div><div id="error" class="error" role="alert"></div></header><main id="main"></main></div><nav class="nav" id="nav"></nav><section id="overlay" class="hidden"></section><script src="./app.js" defer></script></body></html>
