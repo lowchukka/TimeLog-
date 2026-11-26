@@ -176,4 +176,18 @@ body[data-palette="pastel"] .calendar :is(.ok,.sick,.vacation,.holiday,.credit).
 .switch-track i{position:absolute;top:3px;left:3px;width:19px;height:19px;border-radius:50%;background:#fff}
 .ckm-switch[aria-checked="true"] .switch-track{background:#207c4a;border-color:#207c4a}
 .ckm-switch[aria-checked="true"] .switch-track i{left:22px}
+
+/* 3.0.37: compact CKM ledger, five columns without horizontal scrolling. */
+.ckm-card{padding:8px 7px!important;min-width:0}.ckm-table{border-collapse:collapse;table-layout:fixed;width:100%;font-size:clamp(10px,3.3vw,14px);font-variant-numeric:tabular-nums}.ckm-table th,.ckm-table td{padding:5px 2px;text-align:left;overflow-wrap:anywhere;vertical-align:middle;line-height:1.15}.ckm-table thead th{font-size:clamp(9px,2.8vw,12px);color:var(--muted);font-weight:600}.ckm-table tbody tr{height:44px;border-top:1px solid #3a3a3c;cursor:pointer}.ckm-table tbody tr:focus-visible{outline:2px solid var(--green);outline-offset:-2px}.ckm-table td.ckm-money,.ckm-table th:nth-child(n+3){text-align:right}.ckm-table tfoot{border-top:1px solid #69696d;font-weight:700}.ckm-table tfoot td,.ckm-table tfoot th{padding-top:9px;padding-bottom:7px}.ckm-table .ckm-empty{text-align:center;cursor:default}.ckm-summary{display:flex;justify-content:space-between;gap:4px;flex-wrap:wrap;color:var(--muted);font-size:11px;padding:5px 2px 0}.ckm-preview{border-top:1px solid #3a3a3c;padding-top:8px}.ckm-preview .report-row{padding:3px 0}.ckm-card+.full{margin-top:4px}
+
+.ckm-times{margin-top:10px;border:1px solid #3a3a3c;border-radius:12px;padding:8px}.ckm-times summary{cursor:pointer;min-height:28px;font-size:13px;font-weight:600}.ckm-times summary span{color:var(--muted);font-weight:400;margin-left:5px}.ckm-times .grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+
+/* 3.0.38: tighter CKM-only horizontal spacing, respecting landscape safe areas. */
+body.ckm-compact #page-scroll{padding-left:max(6px,env(safe-area-inset-left,0px));padding-right:max(6px,env(safe-area-inset-right,0px))}
+.ckm-card{padding:7px 3px!important;width:100%;max-width:100%}
+.ckm-table{width:100%;max-width:100%;table-layout:fixed;border-spacing:0;font-size:clamp(10px,3vw,13px);-webkit-text-size-adjust:100%;text-size-adjust:100%}
+.ckm-table th,.ckm-table td{padding-left:1px;padding-right:1px;white-space:normal;overflow-wrap:anywhere;word-break:normal;min-width:0}
+.ckm-table thead th{font-size:clamp(9px,2.7vw,11px);line-height:1.2}
+.ckm-table tbody td:nth-child(2),.ckm-table thead th:nth-child(2){text-align:center}
+.ckm-table .ckm-money{font-variant-numeric:tabular-nums;overflow-wrap:anywhere;word-break:break-word}
 </style></head><body><div id="page-scroll"><header><h1 id="heading">TimeLog</h1><div id="subtitle" class="muted"></div><div id="sync" class="sync">Lokaler Speicher wird geprüft …</div><div id="error" class="error" role="alert"></div></header><main id="main"></main></div><nav class="nav" id="nav"></nav><section id="overlay" class="hidden"></section><script src="./app.js" defer></script></body></html>
