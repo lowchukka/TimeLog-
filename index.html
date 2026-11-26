@@ -17,4 +17,60 @@ button{padding:9px 10px;border-radius:12px;min-height:44px}.full{margin-top:7px}
 label{margin:8px 0 4px;font-size:12px}input,select,textarea{font-size:16px;padding:8px 10px;min-height:44px}textarea{min-height:64px}input[type=file]{max-width:100%;font-size:14px}.check{font-size:13px}input[type=checkbox]{min-height:22px}.confirmbox{padding:10px;margin-top:8px}.error:empty{display:none}
 .report-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:baseline;padding:1px 0}.report-row strong{white-space:nowrap;overflow-wrap:normal;font-variant-numeric:tabular-nums}.report-summary{padding-bottom:3px;margin-bottom:3px;border-bottom:1px solid #3a3a3c}.report-total{border-top:1px solid #3a3a3c;margin-top:3px;padding-top:4px;font-weight:600}
 @media(max-width:350px){body,#overlay{padding-left:10px;padding-right:10px}.card{padding:11px}.dialog-close{padding-inline:9px}.report-row{gap:5px}.label{letter-spacing:.5px}}
-</style></head><body><header><div class="label">Persönliche Zeiterfassung</div><h1 id="heading">TimeLog</h1><div id="subtitle" class="muted"></div><div id="sync" class="sync">Lokaler Speicher wird geprüft …</div><div id="error" class="error" role="alert"></div></header><main id="main"></main><nav class="nav" id="nav"></nav><section id="overlay" class="hidden"></section><script src="./app.js" defer></script></body></html>
+
+/* Today only: tighter visual rhythm, retain 44px touch targets and safe-area scroll fallback. */
+body.home-compact{padding-top:calc(6px + env(safe-area-inset-top,0px));padding-bottom:calc(61px + env(safe-area-inset-bottom,0px))}
+.home-compact header h1{font-size:25px;line-height:1.15;margin:0 0 2px}
+.home-compact #subtitle{font-size:13px;line-height:1.25}
+.home-compact .sync{font-size:11px;line-height:1.2;margin:4px 0}
+.home-compact #main .card{padding:10px 12px;border-radius:16px;margin:6px 0}
+.home-compact #main .grid{gap:7px}
+.home-compact #main .grid .card{margin:0;min-width:0}
+.home-compact #main .num{font-size:clamp(17px,5.1vw,22px);line-height:1.15;margin:3px 0}
+.home-compact #main small{font-size:11px;line-height:1.25}
+.home-compact #main .timer{font-size:clamp(32px,9.3vw,48px);line-height:1.15;margin:5px 0}
+.home-compact #main .center{font-size:13px;margin:3px 0}
+.home-compact #main .track{height:5px;margin:7px 0 4px}
+.home-compact #main .daily-total{font-size:12px;margin-top:4px}
+.home-compact #main .full{margin-top:5px;min-height:44px;padding:7px 10px;font-size:14px}
+.home-compact #main .home-more{background:transparent;border:1px solid #38383a;color:var(--muted);font-size:13px}
+.home-compact #main .home-summary{margin-top:7px}
+.home-compact #main .home-summary .card:first-child small{display:block;white-space:nowrap;overflow-wrap:normal;font-size:clamp(10px,2.8vw,11px)}
+.home-compact #main .home-absence{padding:4px 12px}
+.home-compact #main .home-absence .listrow{padding:5px 0;font-size:14px}
+.home-compact #main .home-absence .listrow small{margin-top:2px}
+.home-compact .nav{padding-top:4px;padding-bottom:calc(4px + env(safe-area-inset-bottom,0px))}
+.home-compact .nav button{min-height:44px;padding:3px 2px}
+.home-compact .nav b{font-size:16px;margin-bottom:1px}
+@media(max-width:350px){.home-compact #main .card{padding-left:9px;padding-right:9px}}
+
+/* Calendar density and common vector navigation. Keep page scrolling as a fallback. */
+.nav button svg{display:block;width:21px;height:21px;margin:0 auto 2px;flex:none}
+.nav button span{display:block;line-height:1.2}
+body.calendar-compact{padding-top:calc(6px + env(safe-area-inset-top,0px));padding-bottom:calc(61px + env(safe-area-inset-bottom,0px))}
+.calendar-compact header h1{font-size:25px;line-height:1.15;margin:0 0 2px}
+.calendar-compact #subtitle{font-size:12px;line-height:1.25}
+.calendar-compact .sync{font-size:11px;line-height:1.2;margin:4px 0}
+.calendar-compact .month{margin:5px 0;gap:6px}
+.calendar-compact .month button{min-height:44px;padding:3px 10px}
+.calendar-compact .swipe-hint{display:none}
+.calendar-compact #main .card{padding:9px 10px;border-radius:15px;margin:6px 0}
+.calendar-compact .calendar{gap:3px}
+.calendar-compact .calendar button{height:44px;min-height:44px;padding:2px 0;border-radius:8px;font-size:13px;line-height:1.15}
+.calendar-compact .calendar small{margin-top:2px;font-size:10px;line-height:1.1}
+.calendar-compact .callegend{margin:6px 0 0;gap:3px 9px;font-size:10px;line-height:1.15}
+.calendar-compact .callegend span{gap:4px}
+.calendar-compact .callegend i{width:8px;height:8px;flex:none}
+.calendar-compact .month-weekends{margin:0;min-height:44px;width:auto;padding:4px 8px;font-size:11px;white-space:nowrap;flex:none}.calendar-compact .month strong{font-size:14px;text-align:center;min-width:0;flex:1}
+.calendar-compact .calendar-month .holidaytext{margin:3px 0;font-size:11px;line-height:1.2}
+.calendar-compact .calendar-day h2{font-size:16px;margin:0 0 3px}
+.calendar-compact .calendar-day p{margin:4px 0;font-size:12px}
+.calendar-compact .calendar-day .listrow{padding:4px 0;min-height:44px;font-size:13px;line-height:1.2}
+.calendar-compact .calendar-day .listrow small{font-size:11px;line-height:1.2;margin-top:2px}
+.calendar-compact .calendar-day .row{font-size:13px}
+.calendar-compact .calendar-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.calendar-compact .calendar-actions button{font-size:12px;padding:5px 3px;min-height:44px;margin-top:5px}
+.calendar-compact .nav{padding-top:4px;padding-bottom:calc(4px + env(safe-area-inset-bottom,0px))}
+.calendar-compact .nav button{min-height:44px;padding:3px 2px}
+@media(max-width:350px){.calendar-compact #main .card{padding-inline:8px}.calendar-compact .calendar{gap:2px}.calendar-compact .calendar small{font-size:9px}}
+</style></head><body><header><h1 id="heading">TimeLog</h1><div id="subtitle" class="muted"></div><div id="sync" class="sync">Lokaler Speicher wird geprüft …</div><div id="error" class="error" role="alert"></div></header><main id="main"></main><nav class="nav" id="nav"></nav><section id="overlay" class="hidden"></section><script src="./app.js" defer></script></body></html>
