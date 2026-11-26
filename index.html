@@ -192,13 +192,47 @@ body.ckm-compact #page-scroll{padding-left:max(4px,env(safe-area-inset-left,0px)
 .ckm-table tbody td:nth-child(2),.ckm-table thead th:nth-child(2){text-align:center}.ckm-table tbody td:first-child,.ckm-table thead th:first-child{padding-left:2px}.ckm-table tbody td:last-child,.ckm-table thead th:last-child{padding-right:2px}
 .ckm-table .ckm-money{font-variant-numeric:tabular-nums;overflow-wrap:anywhere;word-break:break-word;text-align:right}.ckm-card+.full{margin-top:6px}
 
-/* 3.0.41: CKM-only balanced margins and lighter summary typography. */
+/* 3.0.43: CKM summary-card gaps equalized and table spacing retained. */
 body.ckm-compact #page-scroll{padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}
-.ckm-card{padding:6px 8px!important}
-.ckm-table th,.ckm-table td{padding-left:1px;padding-right:1px}
-.ckm-table tbody td:first-child,.ckm-table thead th:first-child{padding-left:1px}
-.ckm-table tbody td:last-child,.ckm-table thead th:last-child{padding-right:1px}
+.ckm-stats{gap:12px;margin:10px 0 12px}
+.ckm-stat{padding:16px 14px}
+.ckm-card{padding:8px 6px!important}
+.ckm-table th,.ckm-table td{padding:5px 6px}
 .ckm-stat .label{font-weight:600}
 .ckm-stat .num{font-weight:500;font-size:clamp(22px,7.8vw,40px);letter-spacing:-.6px;overflow-wrap:anywhere;min-width:0}
-@media(max-width:350px){body.ckm-compact #page-scroll{padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px))}.ckm-card{padding-inline:5px!important}.ckm-stat{padding-inline:10px}}
+@media(max-width:350px){body.ckm-compact #page-scroll{padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px))}.ckm-stats{gap:10px}.ckm-card{padding:7px 5px!important}.ckm-table th,.ckm-table td{padding-left:5px;padding-right:5px}.ckm-stat{padding-inline:10px}}
+
+/* 3.0.44: independent light/dark appearance; existing dark mode and palettes remain. */
+.theme-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.theme-choice[aria-pressed="true"]{outline:2px solid var(--green);outline-offset:-2px}
+html[data-theme="light"]{color-scheme:light;--bg:#f2f2f7;--card:#ffffff;--muted:#595961;--blue:#245ca4;--green:#17663b;--red:#a12538;--pending:#835305;--line:#d1d1d6;background:var(--bg)}
+html[data-theme="light"] body{background:var(--bg);color:#1c1c1e}
+html[data-theme="light"] #page-scroll{background:var(--bg)}
+html[data-theme="light"] #overlay{background:var(--bg)}
+html[data-theme="light"] button:where(:not(.primary):not(.warn):not(.danger)){background:#e3e3e8;color:#1c1c1e}
+html[data-theme="light"] button.listrow{background:transparent;border-color:var(--line)}
+html[data-theme="light"] .nav{background:#f9f9fb;border-color:var(--line)}
+html[data-theme="light"] .nav button{background:transparent;color:var(--muted)}
+html[data-theme="light"] .nav button.sel{background:#dedee5;color:#1c1c1e}
+html[data-theme="light"] .home-compact #main .home-more{background:#e3e3e8;color:#1c1c1e}
+html[data-theme="light"] :is(input,select,textarea){background:#fff;color:#1c1c1e;border-color:#8a8a94}
+html[data-theme="light"] .calendar button:not(.ok):not(.sick):not(.vacation):not(.holiday):not(.credit){background:#e4e4e9;color:#1c1c1e}
+html[data-theme="light"] .calendar button.off:not(.ok):not(.sick):not(.vacation):not(.holiday):not(.credit){background:#f0f0f4;color:#595961}
+html[data-theme="light"] .calendar button.ok{background:#24543e;color:#fff}
+html[data-theme="light"] .calendar button.sick{background:#9f3043;color:#fff}
+html[data-theme="light"] .calendar button.vacation{background:#85468f;color:#fff}
+html[data-theme="light"] .calendar button.holiday{background:#285ca3;color:#fff}
+html[data-theme="light"] .calendar button.credit{background:#45536a;color:#fff}
+html[data-theme="light"] body[data-palette="pastel"] .calendar button.ok{background:#a8d5ba;color:#202125}
+html[data-theme="light"] body[data-palette="pastel"] .calendar button.sick{background:#efa59b;color:#202125}
+html[data-theme="light"] body[data-palette="pastel"] .calendar button.vacation{background:#c7a5e5;color:#202125}
+html[data-theme="light"] body[data-palette="pastel"] .calendar button.holiday{background:#91bfee;color:#202125}
+html[data-theme="light"] body[data-palette="pastel"] .calendar button.credit{background:#e5d4a7;color:#202125}
+html[data-theme="light"] .calendar .picked{outline-color:#30343a}
+html[data-theme="light"] .calendar .today{border-color:#62626b}
+html[data-theme="light"] .holidaytext{color:var(--blue)}
+html[data-theme="light"] .track{background:#dedee5}
+html[data-theme="light"] :is(.appearance-divider,.ckm-times,.ckm-preview,.ckm-table tbody tr,.report-row){border-color:var(--line)}
+/* iOS standalone black-translucent status bar uses light system glyphs: retain dark safe-area backing. */
+html[data-theme="light"] #page-scroll,html[data-theme="light"] #overlay{background:linear-gradient(to bottom,#000 0,#000 env(safe-area-inset-top,0px),var(--bg) env(safe-area-inset-top,0px),var(--bg) 100%)}
 </style></head><body><div id="page-scroll"><header><h1 id="heading">TimeLog</h1><div id="subtitle" class="muted"></div><div id="sync" class="sync">Lokaler Speicher wird geprüft …</div><div id="error" class="error" role="alert"></div></header><main id="main"></main></div><nav class="nav" id="nav"></nav><section id="overlay" class="hidden"></section><script src="./app.js" defer></script></body></html>
