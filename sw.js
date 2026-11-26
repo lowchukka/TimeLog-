@@ -1,0 +1,5 @@
+const CACHE='arbeitszeit-3.0.1';
+const ASSETS=['./index.html','./app.js','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
+self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS))));
+self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('arbeitszeit-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
+self.addEventListener('fetch',event=>{const u=new URL(event.request.url);if(event.request.method!=='GET'||u.origin!==self.location.origin)return;const base=new URL(self.registration.scope);const asset=ASSETS.find(a=>new URL(a,base).href===u.href);if(event.request.mode==='navigate'&&(u.pathname===base.pathname||u.pathname===new URL('./index.html',base).pathname)){event.respondWith(caches.open(CACHE).then(c=>c.match('./index.html')).then(r=>r||fetch('./index.html')));}else if(asset){event.respondWith(caches.open(CACHE).then(c=>c.match(asset)).then(r=>r||fetch(event.request)));}});
