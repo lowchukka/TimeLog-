@@ -152,29 +152,21 @@ body:has(#nav:empty){padding-bottom:0}
 .nav{grid-template-columns:repeat(5,minmax(0,1fr))}
 @media(max-width:350px){.nav{grid-template-columns:repeat(5,minmax(0,1fr))}}
 .settings-menu .listrow{min-height:56px;padding:12px 0}.settings-menu .listrow>span:last-child{font-size:23px;color:var(--muted)}.settings-back{min-height:44px;margin-bottom:4px}.palette-options{display:grid;gap:8px}.palette-choice{display:grid;grid-template-columns:1fr auto 20px;align-items:center;text-align:left;gap:8px;min-height:48px}.palette-choice[aria-pressed="true"]{outline:2px solid var(--green);outline-offset:-2px}.palette-swatches{display:flex;gap:3px}.palette-swatches i{display:block;width:15px;height:20px;border-radius:4px;border:1px solid #0003}.palette-mark{text-align:center}.palette-swatches.original i:nth-child(1),.legend-work{background:#24543e}.palette-swatches.original i:nth-child(2),.legend-sick{background:#9f3043}.palette-swatches.original i:nth-child(3),.legend-vacation{background:#85468f}.palette-swatches.original i:nth-child(4),.legend-holiday{background:#285ca3}.legend-credit{background:#45536a}
-.palette-swatches.pastel i:nth-child(1),body[data-palette="pastel"] .legend-work{background:#a8d5ba}.palette-swatches.pastel i:nth-child(2),body[data-palette="pastel"] .legend-sick{background:#e8a4ad}.palette-swatches.pastel i:nth-child(3),body[data-palette="pastel"] .legend-vacation{background:#d6b7e8}.palette-swatches.pastel i:nth-child(4),body[data-palette="pastel"] .legend-holiday{background:#afc9ed}body[data-palette="pastel"] .legend-credit{background:#bfc9dc}
+.palette-swatches.pastel i:nth-child(1),body[data-palette="pastel"] .legend-work{background:#a8d5ba}.palette-swatches.pastel i:nth-child(2),body[data-palette="pastel"] .legend-sick{background:#efa59b}.palette-swatches.pastel i:nth-child(3),body[data-palette="pastel"] .legend-vacation{background:#c7a5e5}.palette-swatches.pastel i:nth-child(4),body[data-palette="pastel"] .legend-holiday{background:#91bfee}body[data-palette="pastel"] .legend-credit{background:#e5d4a7}
 
-body[data-palette="pastel"] button{background:#c4c4cb;color:#202125}
 body[data-palette="pastel"] button.primary{background:#a1d5b0;color:#202125}
 body[data-palette="pastel"] button.warn{background:#ebcb9c;color:#202125}
-body[data-palette="pastel"] button.danger{background:#e8a4ad;color:#202125}
-body[data-palette="pastel"] .listrow{background:none;color:#f5f5f7}
-body[data-palette="pastel"] .nav button{background:transparent;color:var(--muted)}
-body[data-palette="pastel"] .nav button.sel{background:#c4c4cb;color:#202125}
-body[data-palette="pastel"].home-compact #main .home-more{background:#c4c4cb;color:#202125}
-body[data-palette="pastel"] .calendar button{background:#b9b9c1;color:#202125}
-body[data-palette="pastel"] .calendar .off{background:#242426;color:#b0b0b5}
+body[data-palette="pastel"] button.danger{background:#efa59b;color:#202125}
 body[data-palette="pastel"] .calendar .ok{background:#a8d5ba;color:#202125}
-body[data-palette="pastel"] .calendar .sick{background:#e8a4ad;color:#202125}
-body[data-palette="pastel"] .calendar .vacation{background:#d6b7e8;color:#202125}
-body[data-palette="pastel"] .calendar .holiday{background:#afc9ed;color:#202125;box-shadow:inset 0 0 0 1px #8db7ff}
-body[data-palette="pastel"] .calendar .credit{background:#bfc9dc;color:#202125}
-body[data-palette="pastel"] .calendar button small,body[data-palette="pastel"] .calendar .holiday small,body[data-palette="pastel"] .calendar .sick small,body[data-palette="pastel"] .calendar .vacation small,body[data-palette="pastel"] .calendar .credit small,body[data-palette="pastel"] .calendar .ok small{color:#30343a}
+body[data-palette="pastel"] .calendar .sick{background:#efa59b;color:#202125}
+body[data-palette="pastel"] .calendar .vacation{background:#c7a5e5;color:#202125}
+body[data-palette="pastel"] .calendar .holiday{background:#91bfee;color:#202125;box-shadow:inset 0 0 0 1px #8db7ff}
+body[data-palette="pastel"] .calendar .credit{background:#e5d4a7;color:#202125}
+body[data-palette="pastel"] .calendar .holiday small,body[data-palette="pastel"] .calendar .sick small,body[data-palette="pastel"] .calendar .vacation small,body[data-palette="pastel"] .calendar .credit small,body[data-palette="pastel"] .calendar .ok small{color:#30343a}
 /* A dark inset ring plus the existing light outer ring distinguishes today/selection on light tiles. */
-body[data-palette="pastel"] .calendar .today{border-color:#4a4a54}
-body[data-palette="pastel"] .calendar .picked{outline-color:#fff;box-shadow:inset 0 0 0 2px #30343a}
+body[data-palette="pastel"] .calendar :is(.ok,.sick,.vacation,.holiday,.credit).today{border-color:#4a4a54}
+body[data-palette="pastel"] .calendar :is(.ok,.sick,.vacation,.holiday,.credit).picked{outline-color:#fff;box-shadow:inset 0 0 0 2px #30343a}
 
-body[data-palette="pastel"] .calendar .off small{color:#b0b0b5}body[data-palette="pastel"] .calendar .off.today{border-color:#a1a1a6}body[data-palette="pastel"] .calendar .off.picked{box-shadow:none}
 /* 3.0.33: navigation visibility and aligned vector icons. */
 #nav[data-ckm-visible="false"]{grid-template-columns:repeat(4,minmax(0,1fr))}
 .nav button svg{width:21px;height:21px;margin:0 auto 1px;flex:none;stroke-width:1.8}
