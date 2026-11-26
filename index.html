@@ -182,12 +182,13 @@ body[data-palette="pastel"] .calendar :is(.ok,.sick,.vacation,.holiday,.credit).
 
 .ckm-times{margin-top:10px;border:1px solid #3a3a3c;border-radius:12px;padding:8px}.ckm-times summary{cursor:pointer;min-height:28px;font-size:13px;font-weight:600}.ckm-times summary span{color:var(--muted);font-weight:400;margin-left:5px}.ckm-times .grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
 
-/* 3.0.38: tighter CKM-only horizontal spacing, respecting landscape safe areas. */
-body.ckm-compact #page-scroll{padding-left:max(6px,env(safe-area-inset-left,0px));padding-right:max(6px,env(safe-area-inset-right,0px))}
-.ckm-card{padding:7px 3px!important;width:100%;max-width:100%}
+/* 3.0.39: continuous CKM ledger with top summary cards and tighter columns. */
+body.ckm-compact #page-scroll{padding-left:max(4px,env(safe-area-inset-left,0px));padding-right:max(4px,env(safe-area-inset-right,0px))}
+.ckm-stats{gap:8px;margin:10px 0}.ckm-stats .card{margin:0}.ckm-stat{padding:16px 14px}.ckm-stat .label{font-size:10px;letter-spacing:1px}.ckm-stat .num{font-size:clamp(26px,8.6vw,44px);line-height:1.06;margin:10px 0 0;letter-spacing:-1px}.ckm-stat .num.neg{color:var(--red)}.ckm-stat .num.pos{color:var(--green)}
+.ckm-card{padding:6px 1px!important;width:100%;max-width:100%}
 .ckm-table{width:100%;max-width:100%;table-layout:fixed;border-spacing:0;font-size:clamp(10px,3vw,13px);-webkit-text-size-adjust:100%;text-size-adjust:100%}
-.ckm-table th,.ckm-table td{padding-left:1px;padding-right:1px;white-space:normal;overflow-wrap:anywhere;word-break:normal;min-width:0}
-.ckm-table thead th{font-size:clamp(9px,2.7vw,11px);line-height:1.2}
-.ckm-table tbody td:nth-child(2),.ckm-table thead th:nth-child(2){text-align:center}
-.ckm-table .ckm-money{font-variant-numeric:tabular-nums;overflow-wrap:anywhere;word-break:break-word}
+.ckm-table th,.ckm-table td{padding:5px 0;white-space:normal;overflow-wrap:anywhere;word-break:normal;min-width:0}
+.ckm-table thead th{font-size:clamp(9px,2.65vw,11px);line-height:1.15}
+.ckm-table tbody td:nth-child(2),.ckm-table thead th:nth-child(2){text-align:center}.ckm-table tbody td:first-child,.ckm-table thead th:first-child{padding-left:2px}.ckm-table tbody td:last-child,.ckm-table thead th:last-child{padding-right:2px}
+.ckm-table .ckm-money{font-variant-numeric:tabular-nums;overflow-wrap:anywhere;word-break:break-word;text-align:right}.ckm-card+.full{margin-top:6px}
 </style></head><body><div id="page-scroll"><header><h1 id="heading">TimeLog</h1><div id="subtitle" class="muted"></div><div id="sync" class="sync">Lokaler Speicher wird geprüft …</div><div id="error" class="error" role="alert"></div></header><main id="main"></main></div><nav class="nav" id="nav"></nav><section id="overlay" class="hidden"></section><script src="./app.js" defer></script></body></html>
