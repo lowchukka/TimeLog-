@@ -1,7 +1,7 @@
 
 // TimeLog 3.0.50 — offline PWA; model parameters are imported locally.
 
-const VERSION = '3.0.55';
+const VERSION = '3.0.58';
 const MIN = 60000;
 function emptyState() { return {schema:1, revision:0, active:null, entries:[], credits:[], openings:{}}; }
 function assert(ok, message) { if (!ok) throw new Error(message); }
@@ -423,6 +423,48 @@ function effectiveTheme(){return theme==='system'?(systemThemeQuery&&!systemThem
 function syncSystemTheme(){if(theme==='system')applyTheme();}
 function setupSystemTheme(){if(systemThemeQuery){if(typeof systemThemeQuery.addEventListener==='function')systemThemeQuery.addEventListener('change',syncSystemTheme);else if(typeof systemThemeQuery.addListener==='function')systemThemeQuery.addListener(syncSystemTheme);}window.addEventListener('pageshow',syncSystemTheme);window.addEventListener('focus',syncSystemTheme);document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncSystemTheme();});}
 function setTheme(value){if(!['light','dark','system'].includes(value)||pending)return;try{localStorage.setItem(THEME_KEY,value);}catch(e){error='Darstellung konnte nicht lokal gespeichert werden.';syncUI();return;}theme=value;error='';render();}
+// Local navigation diagnostics: bounded, in-memory geometry only.
+const navTraceStart=performance.now(),navTraceFirst=[],navTraceRecent=[];
+let navFirstTouch=null;
+function readNavGeometry(stage){
+ const nav=$('nav'),root=document.documentElement,vv=window.visualViewport;
+ if(!nav||!nav.offsetHeight)return null;
+ const n=v=>Number.isFinite(v)?Math.round(v*100)/100:null;
+ const r=nav.getBoundingClientRect(),css=getComputedStyle(nav),bodyCss=getComputedStyle(document.body);
+ return {stage,ms:n(performance.now()-navTraceStart),page,theme:effectiveTheme(),
+  standalone:!!navigator.standalone||window.matchMedia('(display-mode: standalone)').matches,
+  screen:[n(screen.width),n(screen.height)],dpr:n(devicePixelRatio),
+  inner:[n(innerWidth),n(innerHeight)],client:[n(root.clientWidth),n(root.clientHeight)],
+  visual:vv?{width:n(vv.width),height:n(vv.height),offsetTop:n(vv.offsetTop),offsetLeft:n(vv.offsetLeft),scale:n(vv.scale)}:null,
+  scrollY:n(window.scrollY),documentHeight:n(root.scrollHeight),bodyMinHeight:bodyCss.minHeight,
+  nav:{top:n(r.top),bottom:n(r.bottom),height:n(r.height),position:css.position,cssTop:css.top,cssBottom:css.bottom,paddingBottom:css.paddingBottom},
+  gaps:{inner:n(innerHeight-r.bottom),visual:vv?n(vv.height+vv.offsetTop-r.bottom):null,screen:n(screen.height-r.bottom)},
+  anchor:{height:root.style.getPropertyValue('--visible-height'),top:root.style.getPropertyValue('--visible-nav-top'),bottom:root.style.getPropertyValue('--visible-nav-bottom')}};
+}
+function recordNavGeometry(stage){
+ try{const sample=readNavGeometry(stage);if(!sample)return;
+  if(navTraceFirst.length<24)navTraceFirst.push(sample);
+  else{navTraceRecent.push(sample);if(navTraceRecent.length>24)navTraceRecent.shift();}
+ }catch(e){/* Diagnostics must never interrupt the app. */}
+}
+function captureFirstNavTouch(){
+ if(navFirstTouch)return;
+ try{navFirstTouch=readNavGeometry('vor erster Interaktion');}catch(e){}
+}
+function navDiagnosticReport(){
+ recordNavGeometry('Bericht vor Dialog');
+ return JSON.stringify({version:VERSION,unit:'CSS-px',startup:navTraceFirst,firstInteraction:navFirstTouch,recent:navTraceRecent},null,2);
+}
+function openNavDiagnostic(){
+ if(pending||form||updateBusy)return;
+ const report=navDiagnosticReport();
+ openForm('Navigationsdiagnose','<p class="sub muted">Nur Layout-Messwerte, keine Buchungen. Der Bericht enthält den Start und die erste Berührung, auch wenn sich die Leiste inzwischen korrigiert hat. Kopiere ihn manuell in den Chat.</p><textarea id="navDiagnosticText" readonly rows="12" aria-label="Layoutbericht">'+esc(report)+'</textarea>'+btn('Bericht kopieren','copyNavDiagnostic()','full')+'<p id="navDiagnosticCopy" class="sub muted" role="status"></p>',null);
+}
+async function copyNavDiagnostic(){
+ const field=$('navDiagnosticText'),msg=$('navDiagnosticCopy');if(!field||!msg)return;
+ try{if(!navigator.clipboard)throw new Error();await navigator.clipboard.writeText(field.value);msg.textContent='Bericht kopiert.';}
+ catch(e){field.focus();field.select();field.setSelectionRange(0,field.value.length);msg.textContent='Text markiert. Bitte über das iOS-Menü kopieren.';}
+}
 // Align the fixed navigation with the visible viewport after an iOS PWA reload.
 // UI only: never reload the document, rerender a form, or write user data.
 let viewportFrame=0,viewportTimers=[];
@@ -442,6 +484,7 @@ function syncNavViewport(){
  if(root.getPropertyValue('--visible-height')!==h)root.setProperty('--visible-height',h);
  if(root.getPropertyValue('--visible-nav-top')!==t)root.setProperty('--visible-nav-top',t);
  if(root.getPropertyValue('--visible-nav-bottom')!=='auto')root.setProperty('--visible-nav-bottom','auto');
+ recordNavGeometry('Viewport-Abgleich');
 }
 function queueViewportSync(){if(!viewportFrame)viewportFrame=requestAnimationFrame(syncNavViewport);}
 function settleNavViewport(){
@@ -449,6 +492,9 @@ function settleNavViewport(){
  viewportTimers=[80,250,600,1200,2400].map(ms=>setTimeout(queueViewportSync,ms));
 }
 function setupNavViewport(){
+ document.addEventListener('touchstart',captureFirstNavTouch,{capture:true,passive:true});
+ document.addEventListener('pointerdown',captureFirstNavTouch,{capture:true,passive:true});
+ recordNavGeometry('Start');
  window.addEventListener('resize',queueViewportSync);
  window.addEventListener('pageshow',settleNavViewport);
  window.addEventListener('focus',settleNavViewport);
@@ -493,7 +539,7 @@ function calendarWeekendControl(){return '<button class="weekendtoggle month-wee
 function monthBar(){return '<div class="month">'+btn('‹','shiftMonth(-1)')+'<strong>'+esc(monthName())+'</strong>'+btn('›','shiftMonth(1)')+(page==='calendar'?calendarWeekendControl():'')+'</div>'+((page==='calendar'||page==='reports')?'<p class="swipe-hint">Monat wechseln: nach links oder rechts wischen</p>':'');}
 function request(action){if(pending||!db)return;error='';pending={seq:++seq,action};status='Speicherung ausstehend …';syncUI();processRequest(pending);}
 function receive(id,next,err){if(!pending||pending.seq!==id)return false;const kind=pending.action.type;if(!err&&kind==='ckmSave')ckmMonth=pending.action.day.slice(0,7);pending=null;if(next){state=next;saved=next.revision;}error=err||'';status=err?'Aktion nicht bestätigt':'Lokal gespeichert';if(!err&&form){form=null;$('overlay').classList.add('hidden');}if(!err&&kind==='json')status='Export bereitgestellt';if(!err&&kind==='import')status='Import lokal gespeichert';if(!err&&kind==='history')status='Historische Buchungen lokal ergänzt';if(!err||!form)render();else{ $('formError').textContent=error;syncUI(); }return true;}
-function syncUI(){$('sync').textContent=status;$('sync').style.color=pending?'var(--pending,#fbbf24)':error?'var(--red)':'var(--green)';$('error').textContent=error;document.querySelectorAll('button[data-write]').forEach(b=>b.disabled=!!pending||!db);}
+function syncUI(){const sync=$('sync'),footer=$('settingsSync'),color=pending?'var(--pending,#fbbf24)':error||!db?'var(--red)':'var(--green)';sync.textContent=status;sync.style.color=color;sync.hidden=status==='Lokal gespeichert'&&!pending&&!error&&!!db;if(footer){footer.textContent=status;footer.style.color=color;} $('error').textContent=error;document.querySelectorAll('button[data-write]').forEach(b=>b.disabled=!!pending||!db);}
 function act(type){request({type,note:state.active?state.active.note:''});}
 function openManualStart(){
  if(pending||!db||state.active)return;
@@ -626,10 +672,10 @@ function settings(){
  if(settingsSection==='model'||settingsSection==='pause')return section('Arbeitszeitmodell',state.model?modelDetails(state)+'<div class="appearance-divider"></div><h2>Pausenregelung</h2>'+effectivePauseSummary(state,today)+((state.pauseDaysHistory||[]).some(p=>p.from>today)?'<p class="sub muted">Änderung ab künftigem Datum vorgemerkt</p>':'')+btn('Pausenregelung bearbeiten','openPauseSettings()','full'):profileRequired());
  if(settingsSection==='appearance')return section('Darstellung',themeControl()+'<p class="muted">Farbschema für Kalender und Buttons</p><div class="palette-options">'+[['original','Original'],['pastel','Pastell']].map(([key,label])=>'<button class="palette-choice" aria-pressed="'+(palette===key)+'" onclick="setPalette(\''+key+'\')"><span>'+label+'</span><span class="palette-swatches '+key+'"><i></i><i></i><i></i><i></i></span><span class="palette-mark">'+(palette===key?'✓':'')+'</span></button>').join('')+'</div><p class="sub muted">System folgt automatisch der Darstellung des Geräts. Original und Pastell sind unabhängig davon. Die Auswahl wird nur auf diesem Gerät gespeichert.</p>');
  if(settingsSection==='ckm')return section('CKM',ckmSettings());
- if(settingsSection==='update')return section('App aktualisieren','<div class="report-row"><span>Installierte Version</span><strong>'+VERSION+'</strong></div><p class="sub muted">Nur öffentliche Programmdateien werden geladen. Deine Buchungen und Einstellungen bleiben lokal erhalten. Eine lokale JSON-Sicherung vor Updates wird empfohlen.</p><button id="updateButton" class="full primary" onclick="checkAppUpdate()"'+(updateBusy?' disabled':'')+'>Nach Updates suchen</button><p id="updateStatus" class="sub muted" role="status" aria-live="polite">'+esc(updateStatus)+'</p>');
+ if(settingsSection==='update')return section('App aktualisieren','<div class="report-row"><span>Installierte Version</span><strong>'+VERSION+'</strong></div><p class="sub muted">Nur öffentliche Programmdateien werden geladen. Deine Buchungen und Einstellungen bleiben lokal erhalten. Eine lokale JSON-Sicherung vor Updates wird empfohlen.</p><button id="updateButton" class="full primary" onclick="checkAppUpdate()"'+(updateBusy?' disabled':'')+'>Nach Updates suchen</button><p id="updateStatus" class="sub muted" role="status" aria-live="polite">'+esc(updateStatus)+'</p>'+btn('Navigationsdiagnose anzeigen','openNavDiagnostic()','full')+'<p class="sub muted">Lokaler Layoutbericht für die Menüleistenprüfung.</p>');
  if(settingsSection==='backup')return section('Datensicherung & Import',btn('JSON-Sicherung',"request({type:'json'})",'full')+btn('Historische Buchungen ergänzen','openHistory()','full')+btn('JSON importieren / wiederherstellen','openImport()','full')+'<p class="sub muted">JSON-Sicherung unter „Auf meinem iPhone“ ablegen; Browserdaten können verloren gehen.</p><p id="offlineStatus" class="sub muted">'+esc(offlineStatus)+'</p>');
 
- return '<div class="card settings-menu">'+[['Arbeitszeitmodell','Sollzeiten, Modell und Pausen','model'],['CKM','CKM-Einstellungen','ckm'],['Darstellung',({light:'Hell',dark:'Dunkel',system:'System'}[theme])+' · '+(palette==='pastel'?'Pastell':'Original'),'appearance'],['Datensicherung & Import','JSON, Wiederherstellung','backup'],['App aktualisieren','Installierte Version '+VERSION,'update']].map(([title,sub,key])=>line(title,sub,'›',"openSettingsSection('"+key+"')")).join('')+'</div><div class="footer">TimeLog '+VERSION+' · PWA · Offline<br>Abrechnungsmodell, keine Lohnverrechnung</div>';
+ return '<div class="card settings-menu">'+[['Arbeitszeitmodell','Sollzeiten, Modell und Pausen','model'],['CKM','CKM-Einstellungen','ckm'],['Darstellung',({light:'Hell',dark:'Dunkel',system:'System'}[theme])+' · '+(palette==='pastel'?'Pastell':'Original'),'appearance'],['Datensicherung & Import','JSON, Wiederherstellung','backup'],['App aktualisieren','Installierte Version '+VERSION,'update']].map(([title,sub,key])=>line(title,sub,'›',"openSettingsSection('"+key+"')")).join('')+'</div><div class="footer">TimeLog '+VERSION+' · PWA · Offline<br>Abrechnungsmodell, keine Lohnverrechnung<br><span id="settingsSync" role="status" aria-live="polite"></span></div>';
 }
 function ckmShiftLabel(k){return k==='early'?'Früh':'Spät';}
 function ckmMonthName(){return dayDate(ckmMonth+'-01').toLocaleDateString('de-AT',{month:'long',year:'numeric'});}
@@ -647,7 +693,7 @@ function previewCkm(){const el=$('ckmPreview');if(!el||!form)return;const st=$('
 const NAV_ICONS={"ckm":"<path d=\"M12 3 5.5 10.5H9L3 18h7v3h4v-3h7l-6-7.5h3.5z\"/>","home":"<path d=\"m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z\"/>","calendar":"<rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"2\"/><path d=\"M16 3v4M8 3v4M3 10h18M8 14h2m4 0h2m-8 4h2m4 0h2\"/>","reports":"<path d=\"M3 3v18h18M7 16v-5m5 5V7m5 9V4\"/>","settings":"<circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M9.78 4.73L10.33 2.55L13.67 2.55L14.22 4.73L15.57 5.29L17.51 4.14L19.86 6.49L18.71 8.43L19.27 9.78L21.45 10.33L21.45 13.67L19.27 14.22L18.71 15.57L19.86 17.51L17.51 19.86L15.57 18.71L14.22 19.27L13.67 21.45L10.33 21.45L9.78 19.27L8.43 18.71L6.49 19.86L4.14 17.51L5.29 15.57L4.73 14.22L2.55 13.67L2.55 10.33L4.73 9.78L5.29 8.43L4.14 6.49L6.49 4.14L8.43 5.29z\"/>"};
 function navIcon(p){return '<svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+NAV_ICONS[p]+'</svg>';}
 function profileRequired(){return '<p>Für die reguläre Arbeitszeit ist ein privates Arbeitszeitprofil erforderlich. CKM benötigt kein Profil.</p>'+btn('Privates Profil einrichten','openProfile()','full primary');}
-function render(){if(page==='ckm'&&!ckmVisible)page='home';applyTheme();document.body.dataset.palette=palette;$('nav').dataset.ckmVisible=String(ckmVisible);document.body.classList.toggle('calendar-compact',!!state.model&&page==='calendar');document.body.classList.toggle('home-compact',!!state.model&&page==='home');document.body.classList.toggle('reports-compact',!!state.model&&page==='reports');document.body.classList.toggle('ckm-compact',page==='ckm');const today=localDay(Date.now());$('heading').textContent={home:'TimeLog',calendar:'Kalender',reports:'Daten',settings:'Settings',ckm:'CKM'}[page];$('subtitle').textContent=page==='home'?longDay(today):'TimeLog · '+VERSION;$('main').classList.toggle('month-swipe',!!state.model&&(page==='calendar'||page==='reports'));$('main').innerHTML=(!state.model&&['home','calendar','reports'].includes(page))?'<div class="card"><h2>Privates Arbeitszeitprofil erforderlich</h2><p>Importiere dein privates Profil, damit Sollzeit, Pausen und Abrechnungen korrekt berechnet werden. Die Datei bleibt auf diesem Gerät. CKM kann unabhängig davon über den eigenen Reiter verwendet werden.</p>'+btn('Privates Profil einrichten','openProfile()','full primary')+btn('Historische Buchungen ergänzen','openHistory()','full')+btn('Vorhandene JSON-Sicherung importieren','openImport()','full')+btn('Vorhandene Daten sichern',"request({type:'json'})",'full')+'<p id="offlineStatus" class="sub muted">'+esc(offlineStatus)+'</p></div>':({home,calendar,reports,settings,ckm}[page])();$('nav').innerHTML=navItems().map(([p,t])=>'<button class="'+(page===p?'sel':'')+'" onclick="go(\''+p+'\')">'+navIcon(p)+'<span>'+t+'</span>'+'</button>').join('');document.querySelectorAll('#main button').forEach(b=>{if(/request\(|act\(|discard\(|openManualStart\(|openManualEnd\(|openPauseDays\(/ .test(b.getAttribute('onclick')||''))b.dataset.write='1';});syncUI();live();queueViewportSync();}
+function render(){if(page==='ckm'&&!ckmVisible)page='home';applyTheme();document.body.dataset.palette=palette;$('nav').dataset.ckmVisible=String(ckmVisible);document.body.classList.toggle('calendar-compact',!!state.model&&page==='calendar');document.body.classList.toggle('home-compact',!!state.model&&page==='home');document.body.classList.toggle('reports-compact',!!state.model&&page==='reports');document.body.classList.toggle('ckm-compact',page==='ckm');const today=localDay(Date.now());$('heading').textContent={home:'Heute',calendar:'Kalender',reports:'Daten',settings:'Settings',ckm:'CKM'}[page];$('subtitle').textContent=page==='home'?today.slice(8,10)+'.'+today.slice(5,7)+'.'+today.slice(2,4):'';$('main').classList.toggle('month-swipe',!!state.model&&(page==='calendar'||page==='reports'));$('main').innerHTML=(!state.model&&['home','calendar','reports'].includes(page))?'<div class="card"><h2>Privates Arbeitszeitprofil erforderlich</h2><p>Importiere dein privates Profil, damit Sollzeit, Pausen und Abrechnungen korrekt berechnet werden. Die Datei bleibt auf diesem Gerät. CKM kann unabhängig davon über den eigenen Reiter verwendet werden.</p>'+btn('Privates Profil einrichten','openProfile()','full primary')+btn('Historische Buchungen ergänzen','openHistory()','full')+btn('Vorhandene JSON-Sicherung importieren','openImport()','full')+btn('Vorhandene Daten sichern',"request({type:'json'})",'full')+'<p id="offlineStatus" class="sub muted">'+esc(offlineStatus)+'</p></div>':({home,calendar,reports,settings,ckm}[page])();$('nav').innerHTML=navItems().map(([p,t])=>'<button class="'+(page===p?'sel':'')+'" onclick="go(\''+p+'\')">'+navIcon(p)+'<span>'+t+'</span>'+'</button>').join('');document.querySelectorAll('#main button').forEach(b=>{if(/request\(|act\(|discard\(|openManualStart\(|openManualEnd\(|openPauseDays\(/ .test(b.getAttribute('onclick')||''))b.dataset.write='1';});syncUI();live();recordNavGeometry('Render');queueViewportSync();}
 function field(label,id,type,value,extra=''){return '<label for="'+id+'">'+esc(label)+'</label><input id="'+id+'" type="'+type+'" value="'+esc(value)+'" '+extra+'>';}
 function noteField(note){return '<label for="fNote">Notiz</label><textarea id="fNote" maxlength="1000">'+esc(note)+'</textarea>';}
 function openForm(title,body,kind,id){if(pending)return;form={kind,id};$('overlay').innerHTML='<div class="row dialog-header"><h2>'+esc(title)+'</h2><button class="dialog-close" onclick="closeForm()" aria-label="Schließen">Schließen</button></div><div class="card">'+body+'<p id="formError" class="error"></p>'+(kind?'<button data-write class="full primary" onclick="submitForm()">'+(kind==='manualStart'?'Arbeit starten':kind==='manualEnd'?'Arbeit beenden':'Speichern')+'</button>':'')+(id&&['entry','credit','ckmEntry'].includes(kind)?'<button id="deleteButton" data-write class="full danger" onclick="deleteForm()">Löschen</button><div id="deleteConfirm" class="confirmbox hidden"><p>Buchung dauerhaft löschen?</p><button data-write class="full danger" onclick="confirmDelete()">Endgültig löschen</button><button class="full" onclick="cancelDelete()">Abbrechen</button></div>':'')+'</div>';$('overlay').classList.remove('hidden');$('overlay').scrollTop=0;syncUI();}
@@ -744,6 +790,36 @@ function setupBackSwipe(){
  document.addEventListener('touchcancel',reset,{capture:true,passive:true});
 }
 
+// Swipe on the bottom navigation only: one visible tab per gesture, no wrap.
+function setupNavSwipe(){
+ const nav=$('nav');let gesture=null,suppressClickUntil=0;
+ const allowed=()=>!pending&&!form&&!updateBusy&&!document.hidden;
+ const same=g=>g&&allowed()&&g.page===page&&g.section===settingsSection&&g.ckm===ckmVisible;
+ nav.addEventListener('touchstart',e=>{
+  gesture=null;suppressClickUntil=0;
+  if(!allowed()||e.touches.length!==1)return;
+  const t=e.touches[0];gesture={id:t.identifier,x:t.clientX,y:t.clientY,page,section:settingsSection,ckm:ckmVisible,axis:false};
+ },{passive:true});
+ nav.addEventListener('touchmove',e=>{
+  const g=gesture;if(!same(g)||e.touches.length!==1){gesture=null;return;}
+  const t=e.touches[0];if(t.identifier!==g.id){gesture=null;return;}
+  const x=Math.abs(t.clientX-g.x),y=Math.abs(t.clientY-g.y);
+  if(!g.axis&&Math.max(x,y)>=12){if(x>1.4*y)g.axis=true;else if(y>1.2*x){gesture=null;return;}}
+  if(g.axis&&e.cancelable)e.preventDefault();
+ },{passive:false});
+ nav.addEventListener('touchend',e=>{
+  const g=gesture;gesture=null;if(!same(g)||e.touches.length!==0)return;
+  const t=Array.from(e.changedTouches).find(t=>t.identifier===g.id);if(!t)return;
+  const dx=t.clientX-g.x,dy=t.clientY-g.y;
+  if(Math.abs(dx)<65||Math.abs(dx)<1.6*Math.abs(dy))return;
+  if(e.cancelable)e.preventDefault();suppressClickUntil=performance.now()+500;
+  const keys=navItems().map(([key])=>key),i=keys.indexOf(page),next=i+(dx<0?1:-1);
+  if(i>=0&&next>=0&&next<keys.length)go(keys[next]);
+ },{passive:false});
+ nav.addEventListener('touchcancel',()=>{gesture=null;},{passive:true});
+ nav.addEventListener('click',e=>{if(e.detail!==0&&performance.now()<suppressClickUntil){e.preventDefault();e.stopImmediatePropagation();}},{capture:true});
+}
+
 // A swipe changes only the selected month; no data or revision is changed.
 function setupMonthSwipe(){
  const surface=$('main');let gesture=null;
@@ -834,5 +910,5 @@ async function checkAppUpdate(){
  finally{updateBusy=false;showUpdateStatus(updateStatus);}
 }
 async function offlineSetup(){try{assert('serviceWorker' in navigator,'Offline-Funktion benötigt HTTPS.');await navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'});await Promise.race([navigator.serviceWorker.ready,new Promise((_,reject)=>setTimeout(()=>reject(new Error('Offline-Installation noch nicht abgeschlossen; bitte online neu öffnen.')),15000))]);offlineStatus='Offline-Dateien installiert. Offline-Start nach Schließen testen.';if(navigator.storage&&navigator.storage.persist){const yes=await navigator.storage.persist().catch(()=>false);offlineStatus+=' Dauerhafter Speicher: '+(yes?'gewährt':'nicht bestätigt')+'.';}}catch(e){offlineStatus='Offline-Installation nicht bestätigt: '+String(e.message||e);}if($('offlineStatus'))$('offlineStatus').textContent=offlineStatus;}
-async function init(){try{applyTheme();setupSystemTheme();db=await openDB();const loaded=await readState();state=loaded||emptyState();saved=state.revision;status='Lokal gespeichert';render();setupNavViewport();setupBackSwipe();setupMonthSwipe();setInterval(live,250);offlineSetup();}catch(e){if(db)db.close();db=null;status='Speicher nicht verfügbar';error=String(e.message||e);$('heading').textContent='TimeLog – Speicherfehler';$('main').textContent='Es wird nichts überschrieben. Bitte App erneut öffnen.';syncUI();}}
+async function init(){try{applyTheme();setupSystemTheme();db=await openDB();const loaded=await readState();state=loaded||emptyState();saved=state.revision;status='Lokal gespeichert';render();setupNavViewport();setupBackSwipe();setupMonthSwipe();setupNavSwipe();setInterval(live,250);offlineSetup();}catch(e){if(db)db.close();db=null;status='Speicher nicht verfügbar';error=String(e.message||e);$('heading').textContent='Speicherfehler';$('main').textContent='Es wird nichts überschrieben. Bitte App erneut öffnen.';syncUI();}}
 init();
