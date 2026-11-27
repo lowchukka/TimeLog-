@@ -1,7 +1,7 @@
 
 // TimeLog 3.0.50 — offline PWA; model parameters are imported locally.
 
-const VERSION = '3.0.62';
+const VERSION = '3.0.64';
 const MIN = 60000;
 function emptyState() { return {schema:1, revision:0, active:null, entries:[], credits:[], openings:{}}; }
 function assert(ok, message) { if (!ok) throw new Error(message); }
@@ -426,6 +426,16 @@ function setTheme(value){if(!['light','dark','system'].includes(value)||pending)
 // Local navigation diagnostics: bounded, in-memory geometry only.
 const navTraceStart=performance.now(),navTraceFirst=[],navTraceRecent=[];
 let navFirstTouch=null;
+const NAV_UPDATE_KEY='timelog.nav.lastUpdate.v1';
+function updateNavSample(stage){
+ try{const g=readNavGeometry(stage);if(!g)return null;return {stage,ms:g.ms,screen:g.screen,inner:g.inner,client:g.client,visual:g.visual,nav:g.nav,gaps:g.gaps,standalone:g.standalone};}catch{return null;}
+}
+function storeUpdateNavTrace(to,samples){
+ try{localStorage.setItem(NAV_UPDATE_KEY,JSON.stringify({from:VERSION,to,samples:samples.filter(Boolean).slice(0,3)}));}catch{/* Optional diagnostics only. */}
+}
+function readUpdateNavTrace(){
+ try{const raw=localStorage.getItem(NAV_UPDATE_KEY);if(!raw||raw.length>10000)return null;const v=JSON.parse(raw);if(!/^\d+\.\d+\.\d+$/.test(v.from)||!/^\d+\.\d+\.\d+$/.test(v.to)||!Array.isArray(v.samples))return null;return v;}catch{return null;}
+}
 function readNavGeometry(stage){
  const nav=$('nav'),root=document.documentElement,vv=window.visualViewport;
  if(!nav||!nav.offsetHeight)return null;
@@ -453,12 +463,12 @@ function captureFirstNavTouch(){
 }
 function navDiagnosticReport(){
  recordNavGeometry('Bericht vor Dialog');
- return JSON.stringify({version:VERSION,unit:'CSS-px',startup:navTraceFirst,firstInteraction:navFirstTouch,recent:navTraceRecent},null,2);
+ return JSON.stringify({version:VERSION,unit:'CSS-px',startup:navTraceFirst,firstInteraction:navFirstTouch,recent:navTraceRecent,lastUpdate:readUpdateNavTrace()},null,2);
 }
 function openNavDiagnostic(){
  if(pending||form||updateBusy)return;
  const report=navDiagnosticReport();
- openForm('Navigationsdiagnose','<p class="sub muted">Nur Layout-Messwerte, keine Buchungen. Der Bericht enthält den Start und die erste Berührung, auch wenn sich die Leiste inzwischen korrigiert hat. Kopiere ihn manuell in den Chat.</p><textarea id="navDiagnosticText" readonly rows="12" aria-label="Layoutbericht">'+esc(report)+'</textarea>'+btn('Bericht kopieren','copyNavDiagnostic()','full')+'<p id="navDiagnosticCopy" class="sub muted" role="status"></p>',null);
+ openForm('Navigationsdiagnose','<p class="sub muted">Nur Layout-Messwerte, keine Buchungen. Der Bericht enthält Start, erste Berührung und – ab dem nächsten Update – die letzte Update-Aktivierung, auch wenn sich die Leiste inzwischen korrigiert hat. Kopiere ihn manuell in den Chat.</p><textarea id="navDiagnosticText" readonly rows="12" aria-label="Layoutbericht">'+esc(report)+'</textarea>'+btn('Bericht kopieren','copyNavDiagnostic()','full')+'<p id="navDiagnosticCopy" class="sub muted" role="status"></p>',null);
 }
 async function copyNavDiagnostic(){
  const field=$('navDiagnosticText'),msg=$('navDiagnosticCopy');if(!field||!msg)return;
@@ -814,7 +824,7 @@ function prepareLayout(){
   region('home',main,[['timer','Arbeitszeit',timer],['startpause','Beginn & Pause',start],['weekza','Kalenderwoche & ZA',summary],['absence','Abwesenheit',absence],['actions','Arbeitszeit-Aktionen',...children.filter(n=>n.matches('button.full'))]]);
   grid('homeStart',start,[['start','Beginn'],['pause','Pause']]);grid('homeSummary',summary,[['week','Kalenderwoche'],['za','ZA-Konto']]);
  }else if(page==='calendar'&&state.model){
-  region('calendar',main,[['month','Kalender',q('.calendar-month')],['day','Tagesdetails',q('.calendar-day')],['ckmDay','CKM-Tagesdetails',q('.calendar-ckm-day')]]);
+  region('calendar',main,[['month','Kalender',q('.month'),q('.swipe-hint'),q('.calendar-month')],['day','Tagesdetails',q('.calendar-day')],['ckmDay','CKM-Tagesdetails',q('.calendar-ckm-day')]]);
  }else if(page==='reports'&&state.model){
   const overview=q('#main > .grid')||q('.grid'),heading=children.find(n=>n.matches('h2')),cards=children.filter(n=>n.matches('.card')),billing=cards.find(n=>n.querySelector('.report-summary')),weeks=cards.find(n=>n.querySelector('h2')?.textContent==='Kalenderwochen');
   region('reports',main,[['overview','Kalendermonat',heading,overview],['za','ZA-Konto',q('.za-month')],['billing','Abrechnung',billing],['absence','Abwesenheiten',q('.absence-month')],['chart','Tagessoll im Monatsverlauf',q('.daily-target-card')],['weeks','Kalenderwochen',weeks]]);
@@ -826,13 +836,13 @@ function prepareLayout(){
   const menu=q('.settings-menu');region('settings',menu,LAYOUT_DEFAULTS.settings.map(key=>[key,{model:'Arbeitszeitmodell',ckm:'CKM',appearance:'Darstellung',backup:'Datensicherung & Import',update:'App aktualisieren'}[key],menu?.querySelector('button[onclick="openSettingsSection(\''+key+'\')"]')]));
  }
 }
-function layoutRect(group){const rs=group.nodes.map(n=>n.getBoundingClientRect());return {left:Math.min(...rs.map(r=>r.left)),right:Math.max(...rs.map(r=>r.right)),top:Math.min(...rs.map(r=>r.top)),bottom:Math.max(...rs.map(r=>r.bottom))};}
+function layoutRect(group){const rects=group.nodes.map(n=>n.getBoundingClientRect()),visible=rects.filter(r=>r.width>0&&r.height>0),rs=visible.length?visible:rects;return {left:Math.min(...rs.map(r=>r.left)),right:Math.max(...rs.map(r=>r.right)),top:Math.min(...rs.map(r=>r.top)),bottom:Math.max(...rs.map(r=>r.bottom))};}
 function layoutCurrent(r){return r.groups.slice().sort((a,b)=>Array.from(r.parent.children).indexOf(a.nodes[0])-Array.from(r.parent.children).indexOf(b.nodes[0]));}
 function applyLayoutOrder(r,order,animate){
  const current=layoutCurrent(r),next=order.map(id=>r.groups.find(g=>g.id===id)).filter(Boolean);
  if(next.length!==current.length||current.every((g,i)=>g===next[i]))return;
  const nodes=current.flatMap(g=>g.nodes),rects=animate?new Map(nodes.map(n=>[n,n.getBoundingClientRect()])):null;
- // The unmovable month bar, hints, setup message and footer stay at their original slots.
+ // Keep non-sortable elements outside the groups; calendar month bar and grid move together.
  const marker=document.createComment('layout-slot');r.parent.insertBefore(marker,nodes[0]);for(const g of next)for(const n of g.nodes)r.parent.insertBefore(n,marker);marker.remove();
  if(rects&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches)for(const n of nodes){const a=rects.get(n),b=n.getBoundingClientRect();if(n.animate&&(a.left!==b.left||a.top!==b.top))n.animate([{transform:'translate('+(a.left-b.left)+'px,'+(a.top-b.top)+'px)'},{transform:'none'}],{duration:190,easing:'ease-out'});}
 }
@@ -893,7 +903,7 @@ function setupLayoutDrag(){
   if(valid){g.fx=t.clientX;g.fy=t.clientY;layoutPreview(g);}cancelLayoutHold();if(valid)commitLayoutDrag(g);
  },{capture:true,passive:false});
  document.addEventListener('touchcancel',e=>{const active=layoutHold?.active;if(active||layoutBlockTouch){stop(e);layoutClickUntil=performance.now()+700;}cancelLayoutHold();layoutBlockTouch=false;},{capture:true,passive:false});
- document.addEventListener('contextmenu',e=>{if(layoutHold||layoutBlockTouch)stop(e);},{capture:true});
+ document.addEventListener('contextmenu',e=>{if(layoutHold||layoutBlockTouch||e.target.closest('#nav'))stop(e);},{capture:true});
  document.addEventListener('click',e=>{if(layoutHold?.active||layoutBlockTouch||(e.detail!==0&&performance.now()<layoutClickUntil))stop(e);},{capture:true});
  window.addEventListener('blur',()=>cancelLayoutHold(true));document.addEventListener('visibilitychange',()=>{if(document.hidden)cancelLayoutHold(true);});
 }
@@ -1049,15 +1059,16 @@ function workerVersion(worker){if(!worker)return Promise.resolve(null);const cha
 function waitForWorker(reg,observed){return new Promise((resolve,reject)=>{const deadline=Date.now()+40000;const tick=()=>{if(observed.some(w=>w.state==='redundant')){reject(new Error('Neue Programmdateien konnten nicht installiert werden.'));return;}if(reg.waiting||(!reg.installing&&reg.active&&reg.active.state==='activated')){resolve();return;}if(Date.now()>=deadline){reject(new Error('Neue Programmdateien noch nicht vollständig installiert. Bitte erneut versuchen.'));return;}setTimeout(tick,200);};tick();});}
 async function checkAppUpdate(){
  if(updateBusy||pending||form||!db)return;
- updateBusy=true;showUpdateStatus('Suche nach Updates …');
+ updateBusy=true;showUpdateStatus('Suche nach Updates …');const updateTrace=[updateNavSample('vor Updateprüfung')];
  try{
   assert('serviceWorker' in navigator,'Update-Funktion benötigt eine installierbare HTTPS-Web-App.');
   const sw=navigator.serviceWorker,reg=await updateTimeout(sw.getRegistration());assert(reg,'Offline-Installation noch nicht bereit. Bitte online neu öffnen.');
   const observed=reg.installing?[reg.installing]:[];const found=()=>{if(reg.installing&&!observed.includes(reg.installing))observed.push(reg.installing);};reg.addEventListener('updatefound',found);try{await updateTimeout(reg.update());found();await waitForWorker(reg,observed);}finally{reg.removeEventListener('updatefound',found);}
-  if(reg.waiting){if(pending||form||page!=='settings'||settingsSection!=='update'||document.hidden){showUpdateStatus('Update bereit. Nach Abschluss der Eingaben erneut prüfen.');return;}showUpdateStatus('Neue Programmdateien installiert. Update wird aktiviert …');reg.waiting.postMessage({type:'TIMELOG_ACTIVATE_UPDATE'});const deadline=Date.now()+40000;while(reg.waiting||reg.installing||!reg.active||reg.active.state!=='activated'){assert(Date.now()<deadline,'Aktivierung noch nicht abgeschlossen. Bitte erneut prüfen.');await new Promise(r=>setTimeout(r,200));}}
+  if(reg.waiting){if(pending||form||page!=='settings'||settingsSection!=='update'||document.hidden){showUpdateStatus('Update bereit. Nach Abschluss der Eingaben erneut prüfen.');return;}updateTrace.push(updateNavSample('vor Worker-Aktivierung'));showUpdateStatus('Neue Programmdateien installiert. Update wird aktiviert …');reg.waiting.postMessage({type:'TIMELOG_ACTIVATE_UPDATE'});const deadline=Date.now()+40000;while(reg.waiting||reg.installing||!reg.active||reg.active.state!=='activated'){assert(Date.now()<deadline,'Aktivierung noch nicht abgeschlossen. Bitte erneut prüfen.');await new Promise(r=>setTimeout(r,200));}}
   const latest=await workerVersion(reg.active);assert(latest&&/^\d+\.\d+\.\d+$/.test(latest),'Aktive Programmversion konnte nicht bestätigt werden. Bitte online neu öffnen.');
   if(latest===VERSION){showUpdateStatus('TimeLog '+VERSION+' ist aktuell.');return;}
   const deadline=Date.now()+10000;while(sw.controller!==reg.active){assert(Date.now()<deadline,'Update bereit. Bitte App online neu öffnen.');await new Promise(r=>setTimeout(r,100));}
+  updateTrace.push(updateNavSample('nach Controller-Übernahme'));storeUpdateNavTrace(latest,updateTrace);
   if(pending||form||page!=='settings'||settingsSection!=='update'||document.hidden){showUpdateStatus('Version '+latest+' ist bereit. Nach Abschluss der Eingaben und Speicherung TimeLog vollständig schließen und erneut öffnen.');return;}
   showUpdateStatus('Version '+latest+' ist vollständig vorbereitet. Bitte TimeLog im App-Umschalter vollständig schließen und über den Home-Bildschirm erneut öffnen. Kein Löschen der App erforderlich.');
  }catch(e){showUpdateStatus('Update nicht bestätigt: '+String(e.message||e)+' Die lokale Datensicherung bleibt unverändert.');}
