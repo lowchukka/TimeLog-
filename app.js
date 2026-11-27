@@ -1,7 +1,7 @@
 
 // TimeLog 3.0.50 — offline PWA; model parameters are imported locally.
 
-const VERSION = '3.0.80';
+const VERSION = '3.0.82';
 const MIN = 60000;
 function emptyState() { return {schema:1, revision:0, active:null, entries:[], credits:[], openings:{}}; }
 function assert(ok, message) { if (!ok) throw new Error(message); }
@@ -189,7 +189,7 @@ function change(state, action, now=Date.now()) {
   const s=JSON.parse(JSON.stringify(state));
   if(['ckmConfig','ckmSave','ckmDelete'].includes(action.type))return ckmChange(s,action,now);
   modelOf(s);const a=s.active;
-  if(!['activeFixedApply','fiscalClosing'].includes(action.type))adoptActiveWindow(s);
+  if(!['activeFixedApply','fiscalClosing','discard'].includes(action.type))adoptActiveWindow(s);
   switch(action.type) {
     case 'vacationRange': {
       const plan=vacationPlan(s,action.from,action.to,now,action.id);
@@ -265,7 +265,7 @@ function change(state, action, now=Date.now()) {
       const minimums=action.minimums===undefined?pauseMinimumsOn(action.from,s):action.minimums;assert(validPauseMinimums(minimums,modelOf(s)),'Bitte gültige ganze Pausenminuten je Wochentag eingeben.');s.pauseDaysHistory=(s.pauseDaysHistory||[]).filter(p=>p.from!==action.from);s.pauseDaysHistory.push({from:action.from,days:action.days.slice(),minimums:minimums.slice()});s.pauseDaysHistory.sort((x,y)=>x.from.localeCompare(y.from));break;
     }
     case 'saveNote': assert(a,'Keine laufende Arbeitszeit.'); a.note=cleanNote(action.note); break;
-    case 'discard': assert(a,'Keine laufende Arbeitszeit.'); s.active=null; break;
+    case 'discard': assert(a,'Keine laufende Arbeitszeit.'); assert(action.id===undefined||action.id===a.id,'Die laufende Buchung hat sich geändert. Bitte erneut prüfen.'); s.active=null; break;
     case 'save': {
       const old=action.id?s.entries.find(e=>e.id===action.id):null;
       assert(!action.id || old,'Eintrag nicht gefunden.');
@@ -609,7 +609,13 @@ function shiftMonth(n){const view=captureMonthScroll();let [y,m]=month.split('-'
 function calendarWeekendControl(){return '<button class="weekendtoggle month-weekends" aria-label="'+(showWeekends?'Wochenenden ausblenden':'Wochenenden einblenden')+'" title="'+(showWeekends?'Wochenenden ausblenden':'Wochenenden einblenden')+'" onclick="toggleWeekends()">'+(showWeekends?'5 Tage':'7 Tage')+'</button>';}
 function monthBar(){return '<div class="month month-gesture"><strong aria-live="polite">'+esc(monthName())+'</strong>'+(page==='calendar'?calendarWeekendControl():'')+'</div>'+(page==='calendar'?'<p class="swipe-hint">Monat wechseln: nach links oder rechts wischen</p>':'');}
 function request(action){if(pending||!db)return;error='';pending={seq:++seq,action};status='Speicherung ausstehend …';syncUI();processRequest(pending);}
-function receive(id,next,err){if(!pending||pending.seq!==id)return false;const kind=pending.action.type;if(!err&&kind==='ckmSave')ckmMonth=pending.action.day.slice(0,7);pending=null;if(next){state=next;saved=next.revision;}error=err||'';status=err?'Aktion nicht bestätigt':'Lokal gespeichert';if(!err&&form){form=null;$('overlay').classList.add('hidden');}if(!err&&['json','profileExport'].includes(kind))status='Export bereitgestellt';if(!err&&kind==='import')status='Import lokal gespeichert';if(!err&&kind==='history')status='Historische Buchungen lokal ergänzt';if(!err||!form)render();else{ $('formError').textContent=error;syncUI(); }return true;}
+// The reset display is local UI state only; do not change completed bookings.
+const RESET_PROGRESS_KEY='timelog.resetProgress.v1';
+function readResetProgress(){try{const v=JSON.parse(localStorage.getItem(RESET_PROGRESS_KEY));return v&&validDay(v.day)&&Number.isSafeInteger(v.revision)?v:null;}catch{return null;}}
+let resetProgress=readResetProgress();
+function rememberResetProgress(){resetProgress={day:localDay(Date.now()),revision:state.revision};try{localStorage.setItem(RESET_PROGRESS_KEY,JSON.stringify(resetProgress));}catch{/* The reset itself remains saved in IndexedDB. */}}
+function progressWasReset(t){return !t.a&&resetProgress?.day===t.day&&resetProgress.revision===state.revision;}
+function receive(id,next,err){if(!pending||pending.seq!==id)return false;const kind=pending.action.type;if(!err&&kind==='ckmSave')ckmMonth=pending.action.day.slice(0,7);pending=null;if(next){state=next;saved=next.revision;if(!err&&['discard','stop'].includes(kind)&&!state.active)rememberResetProgress();}error=err||'';status=err?'Aktion nicht bestätigt':'Lokal gespeichert';if(!err&&form){form=null;$('overlay').classList.add('hidden');}if(!err&&['json','profileExport'].includes(kind))status='Export bereitgestellt';if(!err&&kind==='import')status='Import lokal gespeichert';if(!err&&kind==='history')status='Historische Buchungen lokal ergänzt';if(!err||!form)render();else{ $('formError').textContent=error;syncUI(); }return true;}
 function syncUI(){const sync=$('sync'),footer=$('settingsSync'),color=pending?'var(--pending,#fbbf24)':error||!db?'var(--red)':'var(--green)';const historical=status==='Historische Buchungen lokal ergänzt'&&!pending&&!error&&!!db,historySync=$('historySync');sync.textContent=historical?'':status;sync.style.color=color;sync.hidden=(status==='Lokal gespeichert'||historical)&&!pending&&!error&&!!db;if(footer){footer.textContent=historical?'Lokal gespeichert':status;footer.style.color=color;}if(historySync){historySync.textContent=historical?status:'';historySync.hidden=!historical;historySync.style.color=color;} $('error').textContent=error;document.querySelectorAll('button[data-write]').forEach(b=>b.disabled=!!pending||!db);}
 function act(type){if(type==='stop'){openManualEnd();return;}request({type,note:state.active?state.active.note:''});}
 function openManualStart(){
@@ -641,7 +647,17 @@ function previewStopReview(){
 }
 function openWorkActions(){if(!state.active)return;openForm('Weitere Aktionen',btn(state.active.pauseStart===null?'Pause starten':'Pause beenden',"act('"+(state.active.pauseStart===null?'pause':'resume')+"')",'full warn')+(activeNeedsWindow(state)&&!activeCanAdoptWindow(state)?btn('Festes Pausenfenster für laufenden Tag übernehmen','openActiveFixed()','full'):'')+btn('Notiz bearbeiten','editNote()','full')+btn('Laufende Buchung verwerfen','discard()','full'),null);}
 function openActiveFixed(){if(pending||!db||!activeNeedsWindow(state))return;const a=state.active,day=localDay(a.start),action={type:'activeFixedApply',id:a.id,confirmed:true};const next=change(state,action),now=Date.now(),before=activeProjection(state,now),after=activeProjection(next,now);openForm('Pausenregel für laufenden Tag','<p>'+esc(longDay(day))+' · '+esc(configuredWindow(day).join(' – '))+'</p><p>Netto aktuell: '+esc(clock(before.total))+' → '+esc(clock(after.total))+'</p><p>'+esc('Gespeicherte Arbeit: '+signed(daily(state,day).work,false)+' → '+signed(daily(next,day).work,false)+' · Arzt / Behörde: '+signed(dayAB(daily(state,day)),false)+' → '+signed(dayAB(daily(next,day)),false))+'</p><p class="sub muted">Bereits gespeicherte Arbeits- und Arztbuchungen dieses Tages werden ebenfalls neu berechnet. Andere Tage bleiben unverändert.</p><label class="check"><input type="checkbox" id="fActiveFixedConfirm"> Tageskorrektur bestätigen</label>','activeFixed',a.id);}
-function discard(){openForm('Laufenden Tag verwerfen','<p>Diese laufende Buchung wird ohne Speicherung beendet.</p>'+btn('Jetzt verwerfen',"act('discard')",'full danger'),null);}
+function discard(){
+ if(pending||!db||!state.active)return;
+ const id=state.active.id;
+ openForm('Arbeitszeit zurücksetzen','<div id="discardConfirm" role="alertdialog" aria-modal="true" aria-labelledby="discardTitle" aria-describedby="discardMessage"><h2 id="discardTitle">Arbeitszeit zurücksetzen?</h2><p id="discardMessage">Die laufende Arbeitszeit einschließlich ihrer Pausen wird verworfen. Bereits abgeschlossene Buchungen bleiben erhalten.</p><button id="discardCancel" class="full" onclick="closeForm()">Abbrechen</button><button data-write class="full danger" onclick="confirmDiscard()">Arbeitszeit verwerfen</button></div>',null,id);
+ $('discardCancel')?.focus({preventScroll:true});
+}
+function confirmDiscard(){
+ if(pending||!db||!form||!$('discardConfirm')||$('overlay').classList.contains('hidden'))return;
+ if(!state.active||state.active.id!==form.id){$('formError').textContent='Die laufende Buchung hat sich geändert. Bitte erneut prüfen.';return;}
+ request({type:'discard',id:form.id});
+}
 function activeProjection(s,now){
  const a=s.active;if(!a)return null;
  const day=localDay(a.start),gross=Math.max(0,now-a.start),manual=Math.min(gross,a.pauseMs+(a.pauseStart===null?0:Math.max(0,now-a.pauseStart)));
@@ -670,13 +686,13 @@ function regularDayPlan(day,s=state){
 }
 function updateRegularProgress(t){
  const bar=$('regularBar'),label=$('regularTarget');if(!bar||!label)return;
- const plan=regularDayPlan(t.day,state),percent=plan&&plan.minutes?Math.max(0,Math.min(100,t.total/MIN/plan.minutes*100)):0;
+ const plan=regularDayPlan(t.day,state),percent=!progressWasReset(t)&&plan&&plan.minutes?Math.max(0,Math.min(100,t.total/MIN/plan.minutes*100)):0;
  bar.style.width=percent+'%';bar.parentElement.setAttribute('aria-valuenow',String(Math.round(percent)));
  label.textContent=plan?'Regelarbeitszeit '+signed(plan.minutes,false)+' · '+plan.times.join('–'):'Keine reguläre Arbeitszeit';
 }
 function live(){if(page!=='home'||!$('timer'))return;const t=timerSnapshot(Date.now());const phase=$('workPhase');if(phase&&t.a){const w=activeFixedWindow(state),now=Date.now(),inWindow=w&&windowBounds(w,t.day).every((v,i)=>i===0?now>=v:now<v);phase.textContent=t.a.pauseStart!==null?'Pause läuft':inWindow?'Mittagspause · Auto Abzug':'Arbeitszeit läuft';phase.classList.toggle('pos',t.a.pauseStart===null&&!inWindow);}
-$('timer').textContent=clock(t.net);$('pauseTime').textContent=clock(t.pause);$('dayTotal').textContent=clock(t.total);$('bar').style.width=(t.d.target?Math.min(100,(t.total/MIN+t.d.credit)/t.d.target*100):0)+'%';$('target').textContent='Soll '+signed(t.d.target,false)+' · Gutschrift '+signed(t.d.credit,false);updateRegularProgress(t);}
-function home(){const now=Date.now(),today=localDay(now),a=state.active,day=a?localDay(a.start):today,d=daily(state,day),w=weekReport(state,weekStart(today),today),za=dailyZABalance(state,today);const t=timerSnapshot(now),start=a?a.start:t.last?t.last.start:null;return '<div class="card home-timer-card"><div class="label">'+(a?'Laufende Arbeitszeit':'Netto-Arbeitszeit')+'</div><div id="timer" class="timer">00:00:00</div><p id="workPhase" class="center '+(a?(a.pauseStart===null?'pos':''):'muted')+'">'+(a?(a.pauseStart===null?'Arbeitszeit läuft':'Pause läuft'):(d.booked?'Tag erfasst':'Bereit zum Einstempeln'))+'</p><div class="home-progress"><div class="track"><div id="bar" class="bar"></div></div><small id="target"></small><div class="track regular-track" role="progressbar" aria-label="Fortschritt der regulären Arbeitszeit" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="regularBar" class="bar regular-bar"></div></div><small id="regularTarget"></small></div><div class="daily-total"><span class="muted">Tagessumme '+(day===today?'heute':esc(day))+'</span><strong id="dayTotal">00:00:00</strong></div></div><div class="grid">'+metric('Beginn',start?fmt(start):'–',a?'Aktuelle Buchung':t.last?'Letzte Buchung':'Noch keine Buchung')+'<div class="card"><div class="label">Pause</div><div id="pauseTime" class="num">00:00:00</div><small>'+ (a?((activeFixedWindow(state)||autoDay(day)&&pauseMinimumOn(day)>0)?'Auto Abzug':'Erfasst'):t.last?(t.last.autoPauseMs?'Auto Abzug':'Erfasst'):'Keine Buchung') +'</small></div></div>'+'<div class="grid home-summary">'+metric('KW '+weekNumber(today),signed(w.actual,false),'Wochensoll '+signed(weeklyTarget(state),false)).replace('class="card"','class="card home-week-card"')+metric('ZA-Konto',za===null?'–':signed(za),'Tagesaktuell · vorläufig',za===null?'':color(za))+'</div><div class="card home-absence">'+line('Abwesenheit','Urlaub, Krank, Feiertag, Arzt','+',"editCredit(null,'"+today+"')")+'</div>'+(a?(a.pauseStart!==null?btn('Pause beenden',"act('resume')",'full warn'):'')+btn('Arbeit beenden',"act('stop')",'full danger')+btn('Endzeit manuell wählen','openManualEnd()','full')+btn('Weitere Aktionen','openWorkActions()','full home-more'):btn('Arbeit starten',"act('start')",'full primary')+btn('Beginnzeit manuell wählen','openManualStart()','full'));}
+$('timer').textContent=clock(t.net);$('pauseTime').textContent=clock(t.pause);$('dayTotal').textContent=clock(t.total);$('bar').style.width=(!progressWasReset(t)&&t.d.target?Math.min(100,(t.total/MIN+t.d.credit)/t.d.target*100):0)+'%';$('target').textContent='Soll '+signed(t.d.target,false)+' · Gutschrift '+signed(t.d.credit,false);updateRegularProgress(t);}
+function home(){const now=Date.now(),today=localDay(now),a=state.active,day=a?localDay(a.start):today,d=daily(state,day),w=weekReport(state,weekStart(today),today),za=dailyZABalance(state,today);const t=timerSnapshot(now),start=a?a.start:t.last?t.last.start:null;return '<div class="card home-timer-card"><div class="label">'+(a?'Laufende Arbeitszeit':'Netto-Arbeitszeit')+'</div>'+(a?'<button class="home-reset" data-write aria-label="Laufende Arbeitszeit zurücksetzen" onclick="discard()"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 1 2.6 6.4M3 12V5m0 7h7"/></svg></button>':'')+'<div id="timer" class="timer">00:00:00</div><p id="workPhase" class="center '+(a?(a.pauseStart===null?'pos':''):'muted')+'">'+(a?(a.pauseStart===null?'Arbeitszeit läuft':'Pause läuft'):(d.booked?'Tag erfasst':'Bereit zum Einstempeln'))+'</p><div class="home-progress"><div class="track"><div id="bar" class="bar"></div></div><small id="target"></small><div class="track regular-track" role="progressbar" aria-label="Fortschritt der regulären Arbeitszeit" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="regularBar" class="bar regular-bar"></div></div><small id="regularTarget"></small></div><div class="daily-total"><span class="muted">Tagessumme '+(day===today?'heute':esc(day))+'</span><strong id="dayTotal">00:00:00</strong></div></div><div class="grid">'+metric('Beginn',start?fmt(start):'–',a?'Aktuelle Buchung':t.last?'Letzte Buchung':'Noch keine Buchung')+'<div class="card"><div class="label">Pause</div><div id="pauseTime" class="num">00:00:00</div><small>'+ (a?((activeFixedWindow(state)||autoDay(day)&&pauseMinimumOn(day)>0)?'Auto Abzug':'Erfasst'):t.last?(t.last.autoPauseMs?'Auto Abzug':'Erfasst'):'Keine Buchung') +'</small></div></div>'+'<div class="grid home-summary">'+metric('KW '+weekNumber(today),signed(w.actual,false),'Wochensoll '+signed(weeklyTarget(state),false)).replace('class="card"','class="card home-week-card"')+metric('ZA-Konto',za===null?'–':signed(za),'Tagesaktuell · vorläufig',za===null?'':color(za))+'</div><div class="card home-absence">'+line('Abwesenheit','Urlaub, Krank, Feiertag, Arzt','+',"editCredit(null,'"+today+"')")+'</div>'+(a?(a.pauseStart!==null?btn('Pause beenden',"act('resume')",'full warn'):'')+btn('Arbeit beenden',"act('stop')",'full danger')+btn('Endzeit manuell wählen','openManualEnd()','full')+btn('Weitere Aktionen','openWorkActions()','full home-more'):btn('Arbeit starten',"act('start')",'full primary')+btn('Beginnzeit manuell wählen','openManualStart()','full'));}
 function isWeekend(day){const wd=dayDate(day).getDay();return wd===0||wd===6;}
 // Read-only calendar projection: never add CKM minutes to daily(), weekReport() or monthReport().
 function calendarCkmMinutes(s,m,enabled){const totals=new Map();if(enabled)for(const e of ckmData(s).entries){if(e.day.slice(0,7)===m)totals.set(e.day,(totals.get(e.day)||0)+ckmDuration(e.start,e.end));}return totals;}
@@ -1099,7 +1115,7 @@ function setupLayoutDrag(){
  document.addEventListener('touchstart',e=>{
   if(layoutHold?.active){cancelLayoutHold(true);stop(e);return;}
   cancelLayoutHold();if(e.touches.length!==1)return;layoutBlockTouch=false;layoutClickUntil=0;
-  if(!layoutAllowed()||!e.target.closest('#main')||e.target.closest('input,textarea,select,[contenteditable],a,summary,.calendar button,.entry-edit,.ckm-table tbody'))return;
+  if(!layoutAllowed()||!e.target.closest('#main')||e.target.closest('input,textarea,select,[contenteditable],a,summary,.calendar button,.entry-edit,.home-reset,.ckm-table tbody'))return;
   const t=e.touches[0];if(isBackEdge(t.clientX))return;const g=layoutCandidate(e.target,t.clientX,t.clientY);if(!g)return;g.id=t.identifier;g.page=page;layoutHold=g;g.timer=setTimeout(()=>beginLayoutDrag(g),500);
  },{capture:true,passive:false});
  document.addEventListener('touchmove',e=>{
