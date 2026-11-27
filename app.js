@@ -1,7 +1,7 @@
 
 // TimeLog 3.0.50 — offline PWA; model parameters are imported locally.
 
-const VERSION = '3.0.78';
+const VERSION = '3.0.79';
 const MIN = 60000;
 function emptyState() { return {schema:1, revision:0, active:null, entries:[], credits:[], openings:{}}; }
 function assert(ok, message) { if (!ok) throw new Error(message); }
@@ -532,6 +532,7 @@ function syncNavViewport(){
  if(root.getPropertyValue('--visible-height')!==h)root.setProperty('--visible-height',h);
  if(root.getPropertyValue('--visible-nav-top')!==t)root.setProperty('--visible-nav-top',t);
  if(root.getPropertyValue('--visible-nav-bottom')!=='auto')root.setProperty('--visible-nav-bottom','auto');
+ updateReportScroll(top);
  recordNavGeometry('Viewport-Abgleich');
 }
 function queueViewportSync(){if(!viewportFrame)viewportFrame=requestAnimationFrame(syncNavViewport);}
@@ -548,6 +549,7 @@ function setupNavViewport(){
  window.addEventListener('focus',settleNavViewport);
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)settleNavViewport();});
  if(window.visualViewport){window.visualViewport.addEventListener('resize',queueViewportSync);window.visualViewport.addEventListener('scroll',queueViewportSync);}
+ if(typeof ResizeObserver==='function'){const observer=new ResizeObserver(()=>{if(page==='reports')queueViewportSync();});observer.observe($('main'));observer.observe($('page-scroll').querySelector('header'));}
  settleNavViewport();
 }
 function applyTheme(){const effective=effectiveTheme();document.documentElement.dataset.theme=effective;const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=effective==='light'?'#f2f2f7':'#000000';}
@@ -1001,7 +1003,20 @@ function readReportFolds(){
  }
  return reportFolds;
 }
+// Only lock a fully collapsed report when every visible element fits above the nav.
+// Use the measured visual viewport, not screen.height; keep scrolling as a safe fallback.
+function updateReportScroll(navTop){
+ const root=document.documentElement,main=$('main');
+ const compact=page==='reports'&&!!state.model&&main.querySelectorAll('.report-fold-card.report-fold-closed').length===REPORT_FOLD_IDS.length;
+ document.body.classList.toggle('reports-all-folded',compact);
+ const bottom=main.getBoundingClientRect().bottom+window.scrollY+10;
+ const fits=compact&&Number.isFinite(navTop)&&bottom<=navTop+.5;
+ root.classList.toggle('report-scroll-locked',fits);
+ if(fits&&window.scrollY!==0)window.scrollTo(0,0);
+}
 function prepareReportFolds(){
+ document.documentElement.classList.remove('report-scroll-locked');
+ document.body.classList.remove('reports-all-folded');
  if(page!=='reports'||!state.model)return;
  const region=layoutRegions.find(r=>r.id==='reports'),closed=readReportFolds();
  for(const group of region?.groups||[]){
@@ -1018,9 +1033,10 @@ function prepareReportFolds(){
    if(page!=='reports'||layoutHold?.active||layoutBlockTouch)return;
    if(closed.has(group.id))closed.delete(group.id);else closed.add(group.id);
    display();try{localStorage.setItem(REPORT_FOLD_KEY,JSON.stringify([...closed]));}catch{error='Klappzustand konnte nicht dauerhaft gespeichert werden.';syncUI();}
-   queueViewportSync();
+   updateReportScroll($('nav').getBoundingClientRect().top);queueViewportSync();
   });
  }
+ updateReportScroll($('nav').getBoundingClientRect().top);
 }
 
 function layoutRect(group){const rects=group.nodes.map(n=>n.getBoundingClientRect()),visible=rects.filter(r=>r.width>0&&r.height>0),rs=visible.length?visible:rects;return {left:Math.min(...rs.map(r=>r.left)),right:Math.max(...rs.map(r=>r.right)),top:Math.min(...rs.map(r=>r.top)),bottom:Math.max(...rs.map(r=>r.bottom))};}
@@ -1327,14 +1343,28 @@ function setupHomeResume(){
   if(event.persisted&&!document.hidden){wasHidden=false;resume();}
  });
 }
+// Count the minimum from a painted, foreground splash. If interrupted before
+// the two seconds have elapsed, restart that interval on return to the foreground.
+function minimumStartupDisplay(){
+ if(!$('startup-splash'))return Promise.resolve();
+ return new Promise(resolve=>{
+  let frame=0,timer=0;
+  const cancel=()=>{cancelAnimationFrame(frame);clearTimeout(timer);};
+  const done=()=>{cancel();document.removeEventListener('visibilitychange',arm);resolve();};
+  const arm=()=>{cancel();if(!$('startup-splash')){done();return;}if(document.hidden)return;
+   frame=requestAnimationFrame(()=>{frame=requestAnimationFrame(()=>{if(!document.hidden)timer=setTimeout(done,2000);});});
+  };
+  document.addEventListener('visibilitychange',arm);arm();
+ });
+}
 function finishStartupSplash(){
  const splash=$('startup-splash');if(!splash)return;
  splash.setAttribute('aria-hidden','true');
  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){splash.remove();return;}
  splash.classList.add('startup-finished');
- // No minimum display time: fade only once initialization has finished.
+ // Fade only after the local initialization and the minimum visible interval.
  splash.addEventListener('transitionend',()=>splash.remove(),{once:true});
  setTimeout(()=>splash.remove(),250);
 }
-async function init(){try{applyTheme();setupSystemTheme();db=await openDB();const loaded=await readState();state=loaded||emptyState();saved=state.revision;status='Lokal gespeichert';render();setupNavViewport();setupLayoutDrag();setupBackSwipe();setupMonthSwipe();setupNavSwipe();setupHomeResume();setInterval(live,250);offlineSetup();}catch(e){if(db)db.close();db=null;status='Speicher nicht verfügbar';error=String(e.message||e);$('heading').textContent='Speicherfehler';$('main').textContent='Es wird nichts überschrieben. Bitte App erneut öffnen.';syncUI();}finally{finishStartupSplash();}}
+async function init(){const minimum=minimumStartupDisplay();try{applyTheme();setupSystemTheme();db=await openDB();const loaded=await readState();state=loaded||emptyState();saved=state.revision;status='Lokal gespeichert';render();setupNavViewport();setupLayoutDrag();setupBackSwipe();setupMonthSwipe();setupNavSwipe();setupHomeResume();setInterval(live,250);offlineSetup();await minimum;}catch(e){if(db)db.close();db=null;status='Speicher nicht verfügbar';error=String(e.message||e);$('heading').textContent='Speicherfehler';$('main').textContent='Es wird nichts überschrieben. Bitte App erneut öffnen.';syncUI();}finally{finishStartupSplash();}}
 init();
