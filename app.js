@@ -1,7 +1,7 @@
 
 // TimeLog 3.0.50 — offline PWA; model parameters are imported locally.
 
-const VERSION = '3.0.79';
+const VERSION = '3.0.80';
 const MIN = 60000;
 function emptyState() { return {schema:1, revision:0, active:null, entries:[], credits:[], openings:{}}; }
 function assert(ok, message) { if (!ok) throw new Error(message); }
@@ -456,6 +456,13 @@ var palette=readPalette();
 const THEME_KEY='timelog.theme';
 function readTheme(){try{const value=localStorage.getItem(THEME_KEY);return ['light','dark','system'].includes(value)?value:'dark';}catch(e){return 'dark';}}
 var theme=readTheme();
+const SPLASH_KEY='timelog.splash.v1', SPLASH_FADE_MS=300;
+const SPLASH_DURATIONS=[0.5,1,1.5,2,2.5,3,3.5,4,4.5,5];
+function readSplashSettings(){try{const v=JSON.parse(localStorage.getItem(SPLASH_KEY));return {enabled:v?.enabled!==false,seconds:SPLASH_DURATIONS.includes(v?.seconds)?v.seconds:1.5};}catch{return {enabled:true,seconds:1.5};}}
+var splashSettings=readSplashSettings();
+function saveSplashSettings(enabled,seconds){if(pending||typeof enabled!=='boolean'||!SPLASH_DURATIONS.includes(seconds))return;const next={enabled,seconds};try{localStorage.setItem(SPLASH_KEY,JSON.stringify(next));}catch{error='Splashscreen-Einstellung konnte nicht lokal gespeichert werden.';render();return;}splashSettings=next;error='';render();}
+function splashControl(){return '<div class="appearance-divider"></div><h2>Splashscreen</h2><label class="check"><input type="checkbox" id="splashEnabled" '+(splashSettings.enabled?'checked':'')+' onchange="saveSplashSettings(this.checked,splashSettings.seconds)">Splashscreen anzeigen</label><label for="splashSeconds">Anzeigedauer (Sekunden)</label><select id="splashSeconds" onchange="saveSplashSettings(splashSettings.enabled,Number(this.value))"'+(splashSettings.enabled?'':' disabled')+'>'+SPLASH_DURATIONS.map(n=>'<option value="'+n+'"'+(n===splashSettings.seconds?' selected':'')+'>'+String(n).replace('.',',')+' s</option>').join('')+'</select><p class="sub muted">Die Dauer gilt für die vollständig sichtbare Startanzeige. Ein- und Überblenden dauern jeweils 0,3 s. Wirksam beim nächsten vollständigen App-Start.</p>';}
+
 const systemThemeQuery=typeof window.matchMedia==='function'?window.matchMedia('(prefers-color-scheme: dark)'):null;
 function effectiveTheme(){return theme==='system'?(systemThemeQuery&&!systemThemeQuery.matches?'light':'dark'):theme;}
 function syncSystemTheme(){if(theme==='system')applyTheme();}
@@ -842,7 +849,7 @@ function openFixedMonthAB(){
 function settings(){
  const today=localDay(Date.now()),back=btn('‹ Settings','openSettingsSection(\'\')','settings-back'),section=(title,body)=>back+'<div class="card"><h2>'+title+'</h2>'+body+'</div>';
  if(settingsSection==='model'||settingsSection==='pause')return section('Arbeitszeitmodell',state.model?modelDetails(state)+'<div class="appearance-divider"></div><h2>Pausenregelung</h2>'+effectivePauseSummary(state,today)+((state.pauseDaysHistory||[]).some(p=>p.from>today)?'<p class="sub muted">Änderung ab künftigem Datum vorgemerkt</p>':'')+btn('Pausenregelung bearbeiten','openPauseSettings()','full')+btn('Arbeitszeitmodell exportieren',"request({type:'profileExport'})",'full')+'<p class="sub muted">Private JSON-Datei mit Modell und Pausenregeln; ohne Buchungen oder CKM-Daten.</p>':profileRequired());
- if(settingsSection==='appearance')return section('Darstellung',themeControl()+'<p class="muted">Farbschema für Kalender und Buttons</p><div class="palette-options">'+[['original','Original'],['pastel','Pastell']].map(([key,label])=>'<button class="palette-choice" aria-pressed="'+(palette===key)+'" onclick="setPalette(\''+key+'\')"><span>'+label+'</span><span class="palette-swatches '+key+'"><i></i><i></i><i></i><i></i></span><span class="palette-mark">'+(palette===key?'✓':'')+'</span></button>').join('')+'</div><p class="sub muted">System folgt automatisch der Darstellung des Geräts. Original und Pastell sind unabhängig davon. Die Auswahl wird nur auf diesem Gerät gespeichert.</p><div class="appearance-divider"></div><h2>Kartenanordnung</h2><p class="sub muted">Block ca. eine halbe Sekunde gedrückt halten und verschieben. Auf Heute: Karten eines Paares seitlich tauschen, das gesamte Paar nach oben oder unten verschieben. Andere Raster über die Zwischenräume als Gruppe verschieben. Die Reihenfolge wird für jeden Bereich lokal gespeichert.</p>'+btn('Standardanordnung wiederherstellen','resetLayoutOrder()','full')+'<p class="sub muted">Setzt nur die Anordnung aller Bereiche auf den Stand von 3.0.61 mit ergänzter Jahresübersicht und ZA-Einstellung zurück. Buchungen, Farben und übrige Einstellungen bleiben erhalten.</p>');
+ if(settingsSection==='appearance')return section('Darstellung',themeControl()+'<p class="muted">Farbschema für Kalender und Buttons</p><div class="palette-options">'+[['original','Original'],['pastel','Pastell']].map(([key,label])=>'<button class="palette-choice" aria-pressed="'+(palette===key)+'" onclick="setPalette(\''+key+'\')"><span>'+label+'</span><span class="palette-swatches '+key+'"><i></i><i></i><i></i><i></i></span><span class="palette-mark">'+(palette===key?'✓':'')+'</span></button>').join('')+'</div><p class="sub muted">System folgt automatisch der Darstellung des Geräts. Original und Pastell sind unabhängig davon. Die Auswahl wird nur auf diesem Gerät gespeichert.</p><div class="appearance-divider"></div><h2>Kartenanordnung</h2><p class="sub muted">Block ca. eine halbe Sekunde gedrückt halten und verschieben. Auf Heute: Karten eines Paares seitlich tauschen, das gesamte Paar nach oben oder unten verschieben. Andere Raster über die Zwischenräume als Gruppe verschieben. Die Reihenfolge wird für jeden Bereich lokal gespeichert.</p>'+btn('Standardanordnung wiederherstellen','resetLayoutOrder()','full')+'<p class="sub muted">Setzt nur die Anordnung aller Bereiche auf den Stand von 3.0.61 mit ergänzter Jahresübersicht und ZA-Einstellung zurück. Buchungen, Farben und übrige Einstellungen bleiben erhalten.</p>'+splashControl());
  if(settingsSection==='za')return section('ZA-Konto',state.model?zaMonthFields()+'<p class="sub muted">Bearbeitet wird der offizielle ZA-Vormonatssaldo für den gewählten Abrechnungsmonat.</p><p id="zaMonthError" class="error"></p>'+btn('Saldo bearbeiten','editOpening()','full')+'<p class="sub muted">Geschäftsjahresabschluss: Abschlussmonat auswählen; Auszahlung und offizieller Schlussstand separat erfassen.</p>'+btn('Geschäftsjahresabschluss bearbeiten','editFiscalClosing()','full'):profileRequired());
  if(settingsSection==='ckm')return section('CKM',ckmSettings());
  if(settingsSection==='update')return section('App aktualisieren','<div class="report-row"><span>Installierte Version</span><strong>'+VERSION+'</strong></div><p class="sub muted">Nur öffentliche Programmdateien werden geladen. Deine Buchungen und Einstellungen bleiben lokal erhalten. Eine lokale JSON-Sicherung vor Updates wird empfohlen. Nach einem vorbereiteten Update die App im App-Umschalter vollständig schließen und erneut öffnen.</p><button id="updateButton" class="full primary" onclick="checkAppUpdate()"'+(updateBusy?' disabled':'')+'>Nach Updates suchen</button><p id="updateStatus" class="sub muted" role="status" aria-live="polite">'+esc(updateStatus)+'</p>'+btn('Navigationsdiagnose anzeigen','openNavDiagnostic()','full')+'<p class="sub muted">Lokaler Layoutbericht für die Menüleistenprüfung.</p>');
@@ -1343,28 +1350,31 @@ function setupHomeResume(){
   if(event.persisted&&!document.hidden){wasHidden=false;resume();}
  });
 }
-// Count the minimum from a painted, foreground splash. If interrupted before
-// the two seconds have elapsed, restart that interval on return to the foreground.
+// Start in black; count the hold only after the foreground fade-in.
 function minimumStartupDisplay(){
- if(!$('startup-splash'))return Promise.resolve();
- return new Promise(resolve=>{
-  let frame=0,timer=0;
-  const cancel=()=>{cancelAnimationFrame(frame);clearTimeout(timer);};
-  const done=()=>{cancel();document.removeEventListener('visibilitychange',arm);resolve();};
-  const arm=()=>{cancel();if(!$('startup-splash')){done();return;}if(document.hidden)return;
-   frame=requestAnimationFrame(()=>{frame=requestAnimationFrame(()=>{if(!document.hidden)timer=setTimeout(done,2000);});});
-  };
-  document.addEventListener('visibilitychange',arm);arm();
- });
+ splashSettings=readSplashSettings();
+ const splash=$('startup-splash');
+ if(!splash||!splashSettings.enabled){splash?.remove();return {promise:Promise.resolve(),cancel(){}};}
+ document.documentElement.removeAttribute('data-splash-disabled');
+ const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+ let frame=0,timer=0,done=false,resolve;
+ const promise=new Promise(r=>resolve=r);
+ const clear=()=>{cancelAnimationFrame(frame);clearTimeout(timer);};
+ const finish=()=>{if(done)return;done=true;clear();document.removeEventListener('visibilitychange',arm);resolve();};
+ const arm=()=>{clear();if(!$('startup-splash')){finish();return;}splash.classList.remove('startup-revealed');if(document.hidden)return;
+  frame=requestAnimationFrame(()=>{frame=requestAnimationFrame(()=>{if(document.hidden||done)return;splash.classList.add('startup-revealed');
+   frame=requestAnimationFrame(()=>{if(!document.hidden&&!done)timer=setTimeout(finish,splashSettings.seconds*1000+(reduced?0:SPLASH_FADE_MS));});
+  });});
+ };
+ document.addEventListener('visibilitychange',arm);arm();return {promise,cancel:finish};
 }
-function finishStartupSplash(){
+function finishStartupSplash(immediate=false){
  const splash=$('startup-splash');if(!splash)return;
  splash.setAttribute('aria-hidden','true');
- if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){splash.remove();return;}
+ if(immediate||window.matchMedia('(prefers-reduced-motion: reduce)').matches){splash.remove();return;}
  splash.classList.add('startup-finished');
- // Fade only after the local initialization and the minimum visible interval.
- splash.addEventListener('transitionend',()=>splash.remove(),{once:true});
- setTimeout(()=>splash.remove(),250);
+ splash.addEventListener('transitionend',event=>{if(event.target===splash&&event.propertyName==='opacity')splash.remove();});
+ setTimeout(()=>splash.remove(),SPLASH_FADE_MS+100);
 }
-async function init(){const minimum=minimumStartupDisplay();try{applyTheme();setupSystemTheme();db=await openDB();const loaded=await readState();state=loaded||emptyState();saved=state.revision;status='Lokal gespeichert';render();setupNavViewport();setupLayoutDrag();setupBackSwipe();setupMonthSwipe();setupNavSwipe();setupHomeResume();setInterval(live,250);offlineSetup();await minimum;}catch(e){if(db)db.close();db=null;status='Speicher nicht verfügbar';error=String(e.message||e);$('heading').textContent='Speicherfehler';$('main').textContent='Es wird nichts überschrieben. Bitte App erneut öffnen.';syncUI();}finally{finishStartupSplash();}}
+async function init(){const minimum=minimumStartupDisplay();let failed=false;try{applyTheme();setupSystemTheme();db=await openDB();const loaded=await readState();state=loaded||emptyState();saved=state.revision;status='Lokal gespeichert';render();setupNavViewport();setupLayoutDrag();setupBackSwipe();setupMonthSwipe();setupNavSwipe();setupHomeResume();setInterval(live,250);offlineSetup();await minimum.promise;}catch(e){failed=true;if(db)db.close();db=null;status='Speicher nicht verfügbar';error=String(e.message||e);$('heading').textContent='Speicherfehler';$('main').textContent='Es wird nichts überschrieben. Bitte App erneut öffnen.';syncUI();}finally{minimum.cancel();finishStartupSplash(failed);}}
 init();
