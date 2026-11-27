@@ -1,7 +1,7 @@
-const VERSION='3.0.49';
+const VERSION='3.0.50';
 const CACHE='arbeitszeit-'+VERSION;
 // One-time bridge from pre-update-button versions. Set false in subsequent releases.
-const BOOTSTRAP_ACTIVATE=true;
+const BOOTSTRAP_ACTIVATE=false;
 const ASSETS=['./index.html','./app.js','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 self.addEventListener('install',event=>event.waitUntil((async()=>{
  const cache=await caches.open(CACHE);
