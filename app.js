@@ -1,7 +1,7 @@
 
 // TimeLog 3.0.50 — offline PWA; model parameters are imported locally.
 
-const VERSION = '3.0.76';
+const VERSION = '3.0.78';
 const MIN = 60000;
 function emptyState() { return {schema:1, revision:0, active:null, entries:[], credits:[], openings:{}}; }
 function assert(ok, message) { if (!ok) throw new Error(message); }
@@ -864,7 +864,7 @@ function previewCkm(){const el=$('ckmPreview');if(!el||!form)return;const st=$('
 const NAV_ICONS={"ckm":"<path d=\"M12 3 5.5 10.5H9L3 18h7v3h4v-3h7l-6-7.5h3.5z\"/>","home":"<path d=\"m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z\"/>","calendar":"<rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"2\"/><path d=\"M16 3v4M8 3v4M3 10h18M8 14h2m4 0h2m-8 4h2m4 0h2\"/>","reports":"<path d=\"M3 3v18h18M7 16v-5m5 5V7m5 9V4\"/>","settings":"<circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M9.78 4.73L10.33 2.55L13.67 2.55L14.22 4.73L15.57 5.29L17.51 4.14L19.86 6.49L18.71 8.43L19.27 9.78L21.45 10.33L21.45 13.67L19.27 14.22L18.71 15.57L19.86 17.51L17.51 19.86L15.57 18.71L14.22 19.27L13.67 21.45L10.33 21.45L9.78 19.27L8.43 18.71L6.49 19.86L4.14 17.51L5.29 15.57L4.73 14.22L2.55 13.67L2.55 10.33L4.73 9.78L5.29 8.43L4.14 6.49L6.49 4.14L8.43 5.29z\"/>"};
 function navIcon(p){return '<svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+NAV_ICONS[p]+'</svg>';}
 function profileRequired(){return '<p>Für die reguläre Arbeitszeit ist ein privates Arbeitszeitprofil erforderlich. CKM benötigt kein Profil.</p>'+btn('Privates Profil einrichten','openProfile()','full primary');}
-function render(){cancelLayoutHold(true);if(page==='ckm'&&!ckmVisible)page='home';applyTheme();document.body.dataset.palette=palette;$('nav').dataset.ckmVisible=String(ckmVisible);document.body.classList.toggle('calendar-compact',!!state.model&&page==='calendar');document.body.classList.toggle('home-compact',!!state.model&&page==='home');document.body.classList.toggle('reports-compact',!!state.model&&page==='reports');document.body.classList.toggle('ckm-compact',page==='ckm');const today=localDay(Date.now());$('heading').textContent={home:'Heute',calendar:'Kalender',reports:'Daten',settings:'Settings',ckm:'CKM'}[page];$('subtitle').textContent=page==='home'?today.slice(8,10)+'.'+today.slice(5,7)+'.'+today.slice(2,4):'';$('reportMonth').hidden=!(state.model&&page==='reports');$('reportMonth').innerHTML=state.model&&page==='reports'?monthBar():'';$('main').classList.toggle('month-swipe',!!state.model&&(page==='calendar'||page==='reports'));$('main').innerHTML=(!state.model&&['home','calendar','reports'].includes(page))?'<div class="card"><h2>Privates Arbeitszeitprofil erforderlich</h2><p>Importiere dein privates Profil, damit Sollzeit, Pausen und Abrechnungen korrekt berechnet werden. Die Datei bleibt auf diesem Gerät. CKM kann unabhängig davon über den eigenen Reiter verwendet werden.</p>'+btn('Privates Profil einrichten','openProfile()','full primary')+btn('Monatsimport · Historische Buchungen','openHistory()','full')+btn('Vorhandene JSON-Sicherung importieren','openImport()','full')+btn('Vorhandene Daten sichern',"request({type:'json'})",'full')+'<p id="offlineStatus" class="sub muted">'+esc(offlineStatus)+'</p></div>':({home,calendar,reports,settings,ckm}[page])();prepareLayout();$('nav').innerHTML=navItems().map(([p,t])=>'<button class="'+(page===p?'sel':'')+'" onclick="go(\''+p+'\')">'+navIcon(p)+'<span>'+t+'</span>'+'</button>').join('');document.querySelectorAll('#main button').forEach(b=>{if(/request\(|act\(|discard\(|openManualStart\(|openManualEnd\(|openPauseDays\(/ .test(b.getAttribute('onclick')||''))b.dataset.write='1';});syncUI();live();recordNavGeometry('Render');queueViewportSync();}
+function render(){cancelLayoutHold(true);if(page==='ckm'&&!ckmVisible)page='home';applyTheme();document.body.dataset.palette=palette;$('nav').dataset.ckmVisible=String(ckmVisible);document.body.classList.toggle('calendar-compact',!!state.model&&page==='calendar');document.body.classList.toggle('home-compact',!!state.model&&page==='home');document.body.classList.toggle('reports-compact',!!state.model&&page==='reports');document.body.classList.toggle('ckm-compact',page==='ckm');const today=localDay(Date.now());$('heading').textContent={home:'Heute',calendar:'Kalender',reports:'Daten',settings:'Settings',ckm:'CKM'}[page];$('subtitle').textContent=page==='home'?today.slice(8,10)+'.'+today.slice(5,7)+'.'+today.slice(2,4):'';$('reportMonth').hidden=!(state.model&&page==='reports');$('reportMonth').innerHTML=state.model&&page==='reports'?monthBar():'';$('main').classList.toggle('month-swipe',!!state.model&&(page==='calendar'||page==='reports'));$('main').innerHTML=(!state.model&&['home','calendar','reports'].includes(page))?'<div class="card"><h2>Privates Arbeitszeitprofil erforderlich</h2><p>Importiere dein privates Profil, damit Sollzeit, Pausen und Abrechnungen korrekt berechnet werden. Die Datei bleibt auf diesem Gerät. CKM kann unabhängig davon über den eigenen Reiter verwendet werden.</p>'+btn('Privates Profil einrichten','openProfile()','full primary')+btn('Monatsimport · Historische Buchungen','openHistory()','full')+btn('Vorhandene JSON-Sicherung importieren','openImport()','full')+btn('Vorhandene Daten sichern',"request({type:'json'})",'full')+'<p id="offlineStatus" class="sub muted">'+esc(offlineStatus)+'</p></div>':({home,calendar,reports,settings,ckm}[page])();prepareLayout();prepareReportFolds();$('nav').innerHTML=navItems().map(([p,t])=>'<button class="'+(page===p?'sel':'')+'" onclick="go(\''+p+'\')">'+navIcon(p)+'<span>'+t+'</span>'+'</button>').join('');document.querySelectorAll('#main button').forEach(b=>{if(/request\(|act\(|discard\(|openManualStart\(|openManualEnd\(|openPauseDays\(/ .test(b.getAttribute('onclick')||''))b.dataset.write='1';});syncUI();live();recordNavGeometry('Render');queueViewportSync();}
 function field(label,id,type,value,extra=''){return '<label for="'+id+'">'+esc(label)+'</label><input id="'+id+'" type="'+type+'" value="'+esc(value)+'" '+extra+'>';}
 function noteField(note){return '<label for="fNote">Notiz</label><textarea id="fNote" maxlength="1000">'+esc(note)+'</textarea>';}
 function openForm(title,body,kind,id){if(pending)return;form={kind,id};$('overlay').innerHTML='<div class="row dialog-header"><h2>'+esc(title)+'</h2><button class="dialog-close" onclick="closeForm()" aria-label="'+(kind==='manualEnd'?'Abbrechen':'Schließen')+'">'+(kind==='manualEnd'?'Abbrechen':'Schließen')+'</button></div><div class="card">'+body+'<p id="formError" class="error"></p>'+(kind?'<button data-write class="full primary" onclick="submitForm()">'+(kind==='manualStart'?'Arbeit starten':kind==='manualEnd'?'Buchung bestätigen':'Speichern')+'</button>':'')+(id&&['entry','credit','ckmEntry'].includes(kind)?'<button id="deleteButton" data-write class="full danger" onclick="deleteForm()">Löschen</button><div id="deleteConfirm" class="confirmbox hidden"><p>Buchung dauerhaft löschen?</p><button data-write class="full danger" onclick="confirmDelete()">Endgültig löschen</button><button class="full" onclick="cancelDelete()">Abbrechen</button></div>':'')+'</div>';$('overlay').classList.remove('hidden');$('overlay').scrollTop=0;syncUI();}
@@ -990,6 +990,39 @@ function prepareLayout(){
   const menu=q('.settings-menu');region('settings',menu,LAYOUT_DEFAULTS.settings.map(key=>[key,{model:'Arbeitszeitmodell',za:'ZA-Konto',ckm:'CKM',appearance:'Darstellung',backup:'Datensicherung & Import',update:'App aktualisieren'}[key],menu?.querySelector('button[onclick="openSettingsSection(\''+key+'\')"]')]));
  }
 }
+// Independent local display preference; never changes the time ledger or card order.
+const REPORT_FOLD_KEY='timelog.reportFolds.v1';
+const REPORT_FOLD_IDS=['billing','absence','chart','annual','weeks'];
+let reportFolds=null;
+function readReportFolds(){
+ if(reportFolds===null){
+  let raw;try{raw=JSON.parse(localStorage.getItem(REPORT_FOLD_KEY)||'[]');}catch{raw=[];}
+  reportFolds=new Set(Array.isArray(raw)?raw.filter(id=>REPORT_FOLD_IDS.includes(id)):[]);
+ }
+ return reportFolds;
+}
+function prepareReportFolds(){
+ if(page!=='reports'||!state.model)return;
+ const region=layoutRegions.find(r=>r.id==='reports'),closed=readReportFolds();
+ for(const group of region?.groups||[]){
+  if(!REPORT_FOLD_IDS.includes(group.id))continue;
+  const card=group.nodes[0],heading=card.querySelector(':scope > h2');if(!heading)continue;
+  const panel=document.createElement('div');panel.className='report-fold-content';panel.id='report-fold-'+group.id;
+  while(heading.nextSibling)panel.appendChild(heading.nextSibling);
+  card.appendChild(panel);card.classList.add('report-fold-card');
+  const toggle=document.createElement('button');toggle.type='button';toggle.className='report-fold-toggle';toggle.setAttribute('aria-controls',panel.id);
+  while(heading.firstChild)toggle.appendChild(heading.firstChild);
+  const arrow=document.createElement('span');arrow.className='report-fold-chevron';arrow.setAttribute('aria-hidden','true');toggle.appendChild(arrow);heading.appendChild(toggle);
+  const display=()=>{const folded=closed.has(group.id);panel.hidden=folded;toggle.setAttribute('aria-expanded',String(!folded));card.classList.toggle('report-fold-closed',folded);};
+  display();toggle.addEventListener('click',()=>{
+   if(page!=='reports'||layoutHold?.active||layoutBlockTouch)return;
+   if(closed.has(group.id))closed.delete(group.id);else closed.add(group.id);
+   display();try{localStorage.setItem(REPORT_FOLD_KEY,JSON.stringify([...closed]));}catch{error='Klappzustand konnte nicht dauerhaft gespeichert werden.';syncUI();}
+   queueViewportSync();
+  });
+ }
+}
+
 function layoutRect(group){const rects=group.nodes.map(n=>n.getBoundingClientRect()),visible=rects.filter(r=>r.width>0&&r.height>0),rs=visible.length?visible:rects;return {left:Math.min(...rs.map(r=>r.left)),right:Math.max(...rs.map(r=>r.right)),top:Math.min(...rs.map(r=>r.top)),bottom:Math.max(...rs.map(r=>r.bottom))};}
 function layoutCurrent(r){return r.groups.slice().sort((a,b)=>Array.from(r.parent.children).indexOf(a.nodes[0])-Array.from(r.parent.children).indexOf(b.nodes[0]));}
 function applyLayoutOrder(r,order,animate){
@@ -1273,5 +1306,35 @@ async function checkAppUpdate(){
  finally{updateBusy=false;showUpdateStatus(updateStatus);}
 }
 async function offlineSetup(){try{assert('serviceWorker' in navigator,'Offline-Funktion benötigt HTTPS.');await navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'});await Promise.race([navigator.serviceWorker.ready,new Promise((_,reject)=>setTimeout(()=>reject(new Error('Offline-Installation noch nicht abgeschlossen; bitte online neu öffnen.')),15000))]);offlineStatus='Offline-Dateien installiert. Offline-Start nach Schließen testen.';if(navigator.storage&&navigator.storage.persist){const yes=await navigator.storage.persist().catch(()=>false);offlineStatus+=' Dauerhafter Speicher: '+(yes?'gewährt':'nicht bestätigt')+'.';}}catch(e){offlineStatus='Offline-Installation nicht bestätigt: '+String(e.message||e);}if($('offlineStatus'))$('offlineStatus').textContent=offlineStatus;}
-async function init(){try{applyTheme();setupSystemTheme();db=await openDB();const loaded=await readState();state=loaded||emptyState();saved=state.revision;status='Lokal gespeichert';render();setupNavViewport();setupLayoutDrag();setupBackSwipe();setupMonthSwipe();setupNavSwipe();setInterval(live,250);offlineSetup();}catch(e){if(db)db.close();db=null;status='Speicher nicht verfügbar';error=String(e.message||e);$('heading').textContent='Speicherfehler';$('main').textContent='Es wird nichts überschrieben. Bitte App erneut öffnen.';syncUI();}}
+// A retained PWA document can resume without a fresh init. Only a real
+// hidden/visible cycle (or persisted pageshow) requests a Home reset.
+function setupHomeResume(){
+ let wasHidden=document.hidden;
+ const resume=()=>{
+  if(document.hidden||!db||pending||form||updateBusy||error)return;
+  if(!$('overlay').classList.contains('hidden'))return;
+  // Preserve inline inputs and the completed update's restart instructions.
+  if(document.activeElement?.matches('input,textarea,select,[contenteditable="true"]'))return;
+  if(page==='settings'&&settingsSection==='update'&&/^Version \d+\.\d+\.\d+ ist (?:bereit|vollständig vorbereitet)\./.test(updateStatus))return;
+  go('home');
+ };
+ document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){wasHidden=true;return;}
+  if(!wasHidden)return;
+  wasHidden=false;resume();
+ });
+ window.addEventListener('pageshow',event=>{
+  if(event.persisted&&!document.hidden){wasHidden=false;resume();}
+ });
+}
+function finishStartupSplash(){
+ const splash=$('startup-splash');if(!splash)return;
+ splash.setAttribute('aria-hidden','true');
+ if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){splash.remove();return;}
+ splash.classList.add('startup-finished');
+ // No minimum display time: fade only once initialization has finished.
+ splash.addEventListener('transitionend',()=>splash.remove(),{once:true});
+ setTimeout(()=>splash.remove(),250);
+}
+async function init(){try{applyTheme();setupSystemTheme();db=await openDB();const loaded=await readState();state=loaded||emptyState();saved=state.revision;status='Lokal gespeichert';render();setupNavViewport();setupLayoutDrag();setupBackSwipe();setupMonthSwipe();setupNavSwipe();setupHomeResume();setInterval(live,250);offlineSetup();}catch(e){if(db)db.close();db=null;status='Speicher nicht verfügbar';error=String(e.message||e);$('heading').textContent='Speicherfehler';$('main').textContent='Es wird nichts überschrieben. Bitte App erneut öffnen.';syncUI();}finally{finishStartupSplash();}}
 init();
