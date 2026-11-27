@@ -1,7 +1,7 @@
 
 // TimeLog 3.0.50 — offline PWA; model parameters are imported locally.
 
-const VERSION = '3.0.52';
+const VERSION = '3.0.55';
 const MIN = 60000;
 function emptyState() { return {schema:1, revision:0, active:null, entries:[], credits:[], openings:{}}; }
 function assert(ok, message) { if (!ok) throw new Error(message); }
@@ -423,6 +423,39 @@ function effectiveTheme(){return theme==='system'?(systemThemeQuery&&!systemThem
 function syncSystemTheme(){if(theme==='system')applyTheme();}
 function setupSystemTheme(){if(systemThemeQuery){if(typeof systemThemeQuery.addEventListener==='function')systemThemeQuery.addEventListener('change',syncSystemTheme);else if(typeof systemThemeQuery.addListener==='function')systemThemeQuery.addListener(syncSystemTheme);}window.addEventListener('pageshow',syncSystemTheme);window.addEventListener('focus',syncSystemTheme);document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncSystemTheme();});}
 function setTheme(value){if(!['light','dark','system'].includes(value)||pending)return;try{localStorage.setItem(THEME_KEY,value);}catch(e){error='Darstellung konnte nicht lokal gespeichert werden.';syncUI();return;}theme=value;error='';render();}
+// Align the fixed navigation with the visible viewport after an iOS PWA reload.
+// UI only: never reload the document, rerender a form, or write user data.
+let viewportFrame=0,viewportTimers=[];
+function syncNavViewport(){
+ viewportFrame=0;
+ if(document.hidden||form)return;
+ const focused=document.activeElement;
+ if(focused&&focused.matches('input,textarea,select,[contenteditable="true"]'))return;
+ const nav=$('nav'),vv=window.visualViewport;
+ if(!nav||!nav.offsetHeight)return;
+ if(vv&&Math.abs(vv.scale-1)>0.01)return;
+ const height=vv?vv.height:window.innerHeight,offset=vv?vv.offsetTop:0;
+ if(!Number.isFinite(height)||!Number.isFinite(offset)||height<240||offset<0||height>10000)return;
+ const top=Math.max(0,offset+height-nav.offsetHeight);
+ const root=document.documentElement.style;
+ const h=Math.round(height*100)/100+'px',t=Math.round(top*100)/100+'px';
+ if(root.getPropertyValue('--visible-height')!==h)root.setProperty('--visible-height',h);
+ if(root.getPropertyValue('--visible-nav-top')!==t)root.setProperty('--visible-nav-top',t);
+ if(root.getPropertyValue('--visible-nav-bottom')!=='auto')root.setProperty('--visible-nav-bottom','auto');
+}
+function queueViewportSync(){if(!viewportFrame)viewportFrame=requestAnimationFrame(syncNavViewport);}
+function settleNavViewport(){
+ queueViewportSync();viewportTimers.forEach(clearTimeout);
+ viewportTimers=[80,250,600,1200,2400].map(ms=>setTimeout(queueViewportSync,ms));
+}
+function setupNavViewport(){
+ window.addEventListener('resize',queueViewportSync);
+ window.addEventListener('pageshow',settleNavViewport);
+ window.addEventListener('focus',settleNavViewport);
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)settleNavViewport();});
+ if(window.visualViewport){window.visualViewport.addEventListener('resize',queueViewportSync);window.visualViewport.addEventListener('scroll',queueViewportSync);}
+ settleNavViewport();
+}
 function applyTheme(){const effective=effectiveTheme();document.documentElement.dataset.theme=effective;const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=effective==='light'?'#f2f2f7':'#000000';}
 function themeControl(){return '<h2>Hell / Dunkel / System</h2><div class="theme-options">'+[['light','Hell'],['dark','Dunkel'],['system','System']].map(([key,label])=>'<button class="theme-choice" aria-pressed="'+(theme===key)+'" onclick="setTheme(\''+key+'\')">'+label+(theme===key?' ✓':'')+'</button>').join('')+'</div><div class="appearance-divider"></div>';}
 
@@ -446,7 +479,15 @@ function color(n){return n<0?'neg':n>0?'pos':'';}
 function metric(label,value,detail='',cls=''){return '<div class="card"><div class="label">'+esc(label)+'</div><div class="num '+cls+'">'+esc(value)+'</div><small>'+esc(detail)+'</small></div>';}
 function btn(text,action,cls=''){return '<button class="'+cls+'" onclick="'+esc(action)+'">'+esc(text)+'</button>';}
 function line(title,sub,right,action){return '<button class="listrow" onclick="'+esc(action)+'"><span>'+esc(title)+'<small>'+esc(sub)+'</small></span><span>'+esc(right||'›')+'</span></button>';}
-function go(p){settingsSection='';page=p==='ckm'&&!ckmVisible?'home':p;error='';render();window.scrollTo(0,0);}
+function go(p){
+ const next=p==='ckm'&&!ckmVisible?'home':p;
+ // Re-entering either month-based tab starts at the current local month.
+ // Re-rendering the same tab or closing a dialog must preserve its selection.
+ if(next!==page&&(next==='calendar'||next==='reports')){
+  selected=localDay(Date.now());month=selected.slice(0,7);
+ }
+ settingsSection='';page=next;error='';render();window.scrollTo(0,0);
+}
 function shiftMonth(n){let [y,m]=month.split('-').map(Number);month=localDay(new Date(y,m-1+n,1,12).getTime()).slice(0,7);selected=month===localDay(Date.now()).slice(0,7)?localDay(Date.now()):month+'-01';render();}
 function calendarWeekendControl(){return '<button class="weekendtoggle month-weekends" aria-label="'+(showWeekends?'Wochenenden ausblenden':'Wochenenden einblenden')+'" title="'+(showWeekends?'Wochenenden ausblenden':'Wochenenden einblenden')+'" onclick="toggleWeekends()">'+(showWeekends?'5 Tage':'7 Tage')+'</button>';}
 function monthBar(){return '<div class="month">'+btn('‹','shiftMonth(-1)')+'<strong>'+esc(monthName())+'</strong>'+btn('›','shiftMonth(1)')+(page==='calendar'?calendarWeekendControl():'')+'</div>'+((page==='calendar'||page==='reports')?'<p class="swipe-hint">Monat wechseln: nach links oder rechts wischen</p>':'');}
@@ -606,11 +647,11 @@ function previewCkm(){const el=$('ckmPreview');if(!el||!form)return;const st=$('
 const NAV_ICONS={"ckm":"<path d=\"M12 3 5.5 10.5H9L3 18h7v3h4v-3h7l-6-7.5h3.5z\"/>","home":"<path d=\"m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z\"/>","calendar":"<rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"2\"/><path d=\"M16 3v4M8 3v4M3 10h18M8 14h2m4 0h2m-8 4h2m4 0h2\"/>","reports":"<path d=\"M3 3v18h18M7 16v-5m5 5V7m5 9V4\"/>","settings":"<circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M9.78 4.73L10.33 2.55L13.67 2.55L14.22 4.73L15.57 5.29L17.51 4.14L19.86 6.49L18.71 8.43L19.27 9.78L21.45 10.33L21.45 13.67L19.27 14.22L18.71 15.57L19.86 17.51L17.51 19.86L15.57 18.71L14.22 19.27L13.67 21.45L10.33 21.45L9.78 19.27L8.43 18.71L6.49 19.86L4.14 17.51L5.29 15.57L4.73 14.22L2.55 13.67L2.55 10.33L4.73 9.78L5.29 8.43L4.14 6.49L6.49 4.14L8.43 5.29z\"/>"};
 function navIcon(p){return '<svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+NAV_ICONS[p]+'</svg>';}
 function profileRequired(){return '<p>Für die reguläre Arbeitszeit ist ein privates Arbeitszeitprofil erforderlich. CKM benötigt kein Profil.</p>'+btn('Privates Profil einrichten','openProfile()','full primary');}
-function render(){if(page==='ckm'&&!ckmVisible)page='home';applyTheme();document.body.dataset.palette=palette;$('nav').dataset.ckmVisible=String(ckmVisible);document.body.classList.toggle('calendar-compact',!!state.model&&page==='calendar');document.body.classList.toggle('home-compact',!!state.model&&page==='home');document.body.classList.toggle('reports-compact',!!state.model&&page==='reports');document.body.classList.toggle('ckm-compact',page==='ckm');const today=localDay(Date.now());$('heading').textContent={home:'TimeLog',calendar:'Kalender',reports:'Daten',settings:'Settings',ckm:'CKM'}[page];$('subtitle').textContent=page==='home'?longDay(today):'TimeLog · '+VERSION;$('main').classList.toggle('month-swipe',!!state.model&&(page==='calendar'||page==='reports'));$('main').innerHTML=(!state.model&&['home','calendar','reports'].includes(page))?'<div class="card"><h2>Privates Arbeitszeitprofil erforderlich</h2><p>Importiere dein privates Profil, damit Sollzeit, Pausen und Abrechnungen korrekt berechnet werden. Die Datei bleibt auf diesem Gerät. CKM kann unabhängig davon über den eigenen Reiter verwendet werden.</p>'+btn('Privates Profil einrichten','openProfile()','full primary')+btn('Historische Buchungen ergänzen','openHistory()','full')+btn('Vorhandene JSON-Sicherung importieren','openImport()','full')+btn('Vorhandene Daten sichern',"request({type:'json'})",'full')+'<p id="offlineStatus" class="sub muted">'+esc(offlineStatus)+'</p></div>':({home,calendar,reports,settings,ckm}[page])();$('nav').innerHTML=navItems().map(([p,t])=>'<button class="'+(page===p?'sel':'')+'" onclick="go(\''+p+'\')">'+navIcon(p)+'<span>'+t+'</span>'+'</button>').join('');document.querySelectorAll('#main button').forEach(b=>{if(/request\(|act\(|discard\(|openManualStart\(|openManualEnd\(|openPauseDays\(/ .test(b.getAttribute('onclick')||''))b.dataset.write='1';});syncUI();live();}
+function render(){if(page==='ckm'&&!ckmVisible)page='home';applyTheme();document.body.dataset.palette=palette;$('nav').dataset.ckmVisible=String(ckmVisible);document.body.classList.toggle('calendar-compact',!!state.model&&page==='calendar');document.body.classList.toggle('home-compact',!!state.model&&page==='home');document.body.classList.toggle('reports-compact',!!state.model&&page==='reports');document.body.classList.toggle('ckm-compact',page==='ckm');const today=localDay(Date.now());$('heading').textContent={home:'TimeLog',calendar:'Kalender',reports:'Daten',settings:'Settings',ckm:'CKM'}[page];$('subtitle').textContent=page==='home'?longDay(today):'TimeLog · '+VERSION;$('main').classList.toggle('month-swipe',!!state.model&&(page==='calendar'||page==='reports'));$('main').innerHTML=(!state.model&&['home','calendar','reports'].includes(page))?'<div class="card"><h2>Privates Arbeitszeitprofil erforderlich</h2><p>Importiere dein privates Profil, damit Sollzeit, Pausen und Abrechnungen korrekt berechnet werden. Die Datei bleibt auf diesem Gerät. CKM kann unabhängig davon über den eigenen Reiter verwendet werden.</p>'+btn('Privates Profil einrichten','openProfile()','full primary')+btn('Historische Buchungen ergänzen','openHistory()','full')+btn('Vorhandene JSON-Sicherung importieren','openImport()','full')+btn('Vorhandene Daten sichern',"request({type:'json'})",'full')+'<p id="offlineStatus" class="sub muted">'+esc(offlineStatus)+'</p></div>':({home,calendar,reports,settings,ckm}[page])();$('nav').innerHTML=navItems().map(([p,t])=>'<button class="'+(page===p?'sel':'')+'" onclick="go(\''+p+'\')">'+navIcon(p)+'<span>'+t+'</span>'+'</button>').join('');document.querySelectorAll('#main button').forEach(b=>{if(/request\(|act\(|discard\(|openManualStart\(|openManualEnd\(|openPauseDays\(/ .test(b.getAttribute('onclick')||''))b.dataset.write='1';});syncUI();live();queueViewportSync();}
 function field(label,id,type,value,extra=''){return '<label for="'+id+'">'+esc(label)+'</label><input id="'+id+'" type="'+type+'" value="'+esc(value)+'" '+extra+'>';}
 function noteField(note){return '<label for="fNote">Notiz</label><textarea id="fNote" maxlength="1000">'+esc(note)+'</textarea>';}
 function openForm(title,body,kind,id){if(pending)return;form={kind,id};$('overlay').innerHTML='<div class="row dialog-header"><h2>'+esc(title)+'</h2><button class="dialog-close" onclick="closeForm()" aria-label="Schließen">Schließen</button></div><div class="card">'+body+'<p id="formError" class="error"></p>'+(kind?'<button data-write class="full primary" onclick="submitForm()">'+(kind==='manualStart'?'Arbeit starten':kind==='manualEnd'?'Arbeit beenden':'Speichern')+'</button>':'')+(id&&['entry','credit','ckmEntry'].includes(kind)?'<button id="deleteButton" data-write class="full danger" onclick="deleteForm()">Löschen</button><div id="deleteConfirm" class="confirmbox hidden"><p>Buchung dauerhaft löschen?</p><button data-write class="full danger" onclick="confirmDelete()">Endgültig löschen</button><button class="full" onclick="cancelDelete()">Abbrechen</button></div>':'')+'</div>';$('overlay').classList.remove('hidden');$('overlay').scrollTop=0;syncUI();}
-function closeForm(){if(pending)return;form=null;$('overlay').classList.add('hidden');}
+function closeForm(){if(pending)return;form=null;$('overlay').classList.add('hidden');settleNavViewport();}
 function editEntry(id,day){if(pending)return;const e=state.entries.find(x=>x.id===id),times=defaultTimes(day),automatic=e?e.autoPause===true:effectiveAutoDay(day);openForm(e?'Buchung bearbeiten':'Arbeitszeit hinzufügen',(e?field('Beginn','fStart','datetime-local',localInput(e.start))+field('Ende','fEnd','datetime-local',localInput(e.end)):'<p class="muted">'+esc(longDay(day))+'</p>'+field('Beginn','fStart','time',times[0],'required step="60"')+field('Ende','fEnd','time',times[1],'required step="60"')+'<label class="check"><input type="checkbox" id="fNextDay"> Ende am Folgetag</label>')+field('Erfasste Pause (Minuten)','fPause','number',e?Math.round((e.pauseMs-(e.autoPauseMs||0))/MIN*100)/100:0,'min="0" step="0.01"')+'<label class="check"><input type="checkbox" id="fAuto" '+(automatic?'checked':'')+'> Automatische Tagespause</label>'+(prospectiveWindow(e?localDay(e.start):day)?'<p class="sub muted">Festes Pausenfenster '+esc(prospectiveWindow(e?localDay(e.start):day).join(' – '))+'; nur Überschneidung, ohne zusätzlichen Dauerabzug. Ohne Haken gilt die erfasste Pause.</p>':'<p class="sub muted">Ab '+esc(signed(modelOf(state).pauseThreshold,false))+' Brutto insgesamt '+esc(signed(pauseMinimumOn(e?localDay(e.start):day,state),false))+' für den angezeigten Tag'+(e?' (bei geändertem Beginn gilt dessen Wochentagsregel)':'')+', sofern nicht bereits mehr Pause erfasst wurde. Ohne Haken gilt die eingegebene Pause; weitere automatische Buchungen des Tages können die Tagespause ergänzen.</p>')+(e&&e.autoPauseMs?'<p class="sub muted">Aktuell zusätzlich automatisch: '+esc(clock(e.autoPauseMs))+'</p>':'')+noteField(e?e.note:''),'entry',id);if(!e)form.entryDay=day;}
 function editCredit(id,day){
  if(pending)return;
@@ -659,6 +700,50 @@ function submitForm(){if(!form||pending)return;try{let a;if(form.kind==='ckmConf
 function deleteForm(){if(!form||!form.id||pending)return;const box=$('deleteConfirm');box.classList.remove('hidden');$('deleteButton').classList.add('hidden');box.scrollIntoView({block:'nearest'});}
 function cancelDelete(){$('deleteConfirm').classList.add('hidden');$('deleteButton').classList.remove('hidden');}
 function confirmDelete(){if(form&&form.id&&!pending)request({type:form.kind==='ckmEntry'?'ckmDelete':form.kind==='credit'?'deleteCredit':'delete',id:form.id});}
+// In-app back gesture; never navigate the browser history or modify stored data.
+const BACK_EDGE_WIDTH=24;
+function isBackEdge(x){return x>=0&&x<=BACK_EDGE_WIDTH;}
+function backSwipeTarget(){
+ if(pending||updateBusy||!db)return null;
+ if(form){
+  const overlay=$('overlay'),confirm=$('deleteConfirm');
+  if(overlay.classList.contains('hidden')||form.edgeDirty||(confirm&&!confirm.classList.contains('hidden'))||overlay.querySelector('input[type="file"]')||document.activeElement?.matches('input,textarea,select,[contenteditable]'))return null;
+  return 'dialog';
+ }
+ return page==='settings'&&settingsSection?'settings':null;
+}
+function setupBackSwipe(){
+ let gesture=null;
+ const reset=()=>{gesture=null;};
+ const markDirty=()=>{if(form)form.edgeDirty=true;};
+ $('overlay').addEventListener('input',markDirty,true);
+ $('overlay').addEventListener('change',markDirty,true);
+ const same=g=>g&&g.page===page&&g.section===settingsSection&&g.form===form&&backSwipeTarget()===g.target;
+ document.addEventListener('touchstart',e=>{
+  reset();if(e.touches.length!==1||e.target.closest('input,textarea,select,[contenteditable],#nav'))return;
+  const t=e.touches[0],target=backSwipeTarget();
+  if(!target||!isBackEdge(t.clientX))return;
+  gesture={id:t.identifier,x:t.clientX,y:t.clientY,page,section:settingsSection,form,target,axis:false};
+ },{capture:true,passive:true});
+ document.addEventListener('touchmove',e=>{
+  const g=gesture;if(!g)return;
+  if(e.touches.length!==1||!same(g)){reset();return;}
+  const t=e.touches[0];if(t.identifier!==g.id){reset();return;}
+  const dx=t.clientX-g.x,dy=Math.abs(t.clientY-g.y);
+  if(!g.axis&&Math.max(Math.abs(dx),dy)>=12){if(dx>dy*1.5)g.axis=true;else if(dx<0||dy>Math.abs(dx)*1.2){reset();return;}}
+  if(g.axis&&e.cancelable)e.preventDefault();
+ },{capture:true,passive:false});
+ document.addEventListener('touchend',e=>{
+  const g=gesture;reset();if(!same(g)||e.touches.length!==0)return;
+  const t=Array.from(e.changedTouches).find(t=>t.identifier===g.id);if(!t)return;
+  const dx=t.clientX-g.x,dy=Math.abs(t.clientY-g.y);
+  if(dx<65||dx<1.6*dy)return;
+  if(e.cancelable)e.preventDefault();
+  if(g.target==='dialog')closeForm();else openSettingsSection('');
+ },{capture:true,passive:false});
+ document.addEventListener('touchcancel',reset,{capture:true,passive:true});
+}
+
 // A swipe changes only the selected month; no data or revision is changed.
 function setupMonthSwipe(){
  const surface=$('main');let gesture=null;
@@ -666,7 +751,7 @@ function setupMonthSwipe(){
  const reset=()=>{gesture=null;};
  surface.addEventListener('touchstart',e=>{
    reset();if(!allowed()||e.touches.length!==1||e.target.closest('input,textarea,select,[contenteditable]'))return;
-   const t=e.touches[0];gesture={id:t.identifier,x:t.clientX,y:t.clientY,page,month,axis:null};
+   const t=e.touches[0];if(isBackEdge(t.clientX))return;gesture={id:t.identifier,x:t.clientX,y:t.clientY,page,month,axis:null};
  },{passive:true});
  surface.addEventListener('touchmove',e=>{
    if(!gesture)return;if(e.touches.length!==1||!allowed()){reset();return;}
@@ -749,5 +834,5 @@ async function checkAppUpdate(){
  finally{updateBusy=false;showUpdateStatus(updateStatus);}
 }
 async function offlineSetup(){try{assert('serviceWorker' in navigator,'Offline-Funktion benötigt HTTPS.');await navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'});await Promise.race([navigator.serviceWorker.ready,new Promise((_,reject)=>setTimeout(()=>reject(new Error('Offline-Installation noch nicht abgeschlossen; bitte online neu öffnen.')),15000))]);offlineStatus='Offline-Dateien installiert. Offline-Start nach Schließen testen.';if(navigator.storage&&navigator.storage.persist){const yes=await navigator.storage.persist().catch(()=>false);offlineStatus+=' Dauerhafter Speicher: '+(yes?'gewährt':'nicht bestätigt')+'.';}}catch(e){offlineStatus='Offline-Installation nicht bestätigt: '+String(e.message||e);}if($('offlineStatus'))$('offlineStatus').textContent=offlineStatus;}
-async function init(){try{applyTheme();setupSystemTheme();db=await openDB();const loaded=await readState();state=loaded||emptyState();saved=state.revision;status='Lokal gespeichert';render();setupMonthSwipe();setInterval(live,250);offlineSetup();}catch(e){if(db)db.close();db=null;status='Speicher nicht verfügbar';error=String(e.message||e);$('heading').textContent='TimeLog – Speicherfehler';$('main').textContent='Es wird nichts überschrieben. Bitte App erneut öffnen.';syncUI();}}
+async function init(){try{applyTheme();setupSystemTheme();db=await openDB();const loaded=await readState();state=loaded||emptyState();saved=state.revision;status='Lokal gespeichert';render();setupNavViewport();setupBackSwipe();setupMonthSwipe();setInterval(live,250);offlineSetup();}catch(e){if(db)db.close();db=null;status='Speicher nicht verfügbar';error=String(e.message||e);$('heading').textContent='TimeLog – Speicherfehler';$('main').textContent='Es wird nichts überschrieben. Bitte App erneut öffnen.';syncUI();}}
 init();
