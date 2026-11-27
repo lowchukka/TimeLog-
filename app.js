@@ -1,7 +1,7 @@
 
 // TimeLog 3.0.50 — offline PWA; model parameters are imported locally.
 
-const VERSION = '3.0.61';
+const VERSION = '3.0.62';
 const MIN = 60000;
 function emptyState() { return {schema:1, revision:0, active:null, entries:[], credits:[], openings:{}}; }
 function assert(ok, message) { if (!ok) throw new Error(message); }
@@ -578,7 +578,7 @@ function timerSnapshot(now){
 }
 function live(){if(page!=='home'||!$('timer'))return;const t=timerSnapshot(Date.now());const phase=$('workPhase');if(phase&&t.a){const w=activeFixedWindow(state),now=Date.now(),inWindow=w&&windowBounds(w,t.day).every((v,i)=>i===0?now>=v:now<v);phase.textContent=t.a.pauseStart!==null?'Pause läuft':inWindow?'Mittagspause · Auto Abzug':'Arbeitszeit läuft';phase.classList.toggle('pos',t.a.pauseStart===null&&!inWindow);}
 $('timer').textContent=clock(t.net);$('pauseTime').textContent=clock(t.pause);$('dayTotal').textContent=clock(t.total);$('bar').style.width=(t.d.target?Math.min(100,(t.total/MIN+t.d.credit)/t.d.target*100):0)+'%';$('target').textContent='Soll '+signed(t.d.target,false)+' · Gutschrift '+signed(t.d.credit,false);}
-function home(){const now=Date.now(),today=localDay(now),a=state.active,day=a?localDay(a.start):today,d=daily(state,day),w=weekReport(state,weekStart(today),today),za=dailyZABalance(state,today);const t=timerSnapshot(now),start=a?a.start:t.last?t.last.start:null;return '<div class="card"><div class="label">'+(a?'Laufende Arbeitszeit':t.last?'Letzte Arbeitszeit':'Netto-Arbeitszeit')+'</div><div id="timer" class="timer">00:00:00</div><p id="workPhase" class="center '+(a?(a.pauseStart===null?'pos':''):'muted')+'">'+(a?(a.pauseStart===null?'Arbeitszeit läuft':'Pause läuft'):(d.booked?'Tag erfasst':'Bereit zum Einstempeln'))+'</p><div class="track"><div id="bar" class="bar"></div></div><small id="target"></small><div class="daily-total"><span class="muted">Tagessumme '+(day===today?'heute':esc(day))+'</span><strong id="dayTotal">00:00:00</strong></div></div><div class="grid">'+metric('Beginn',start?fmt(start):'–',a?'Aktuelle Buchung':t.last?'Letzte Buchung':'Noch keine Buchung')+'<div class="card"><div class="label">Pause</div><div id="pauseTime" class="num">00:00:00</div><small>'+ (a?((activeFixedWindow(state)||autoDay(day)&&pauseMinimumOn(day)>0)?'Auto Abzug':'Erfasst'):t.last?(t.last.autoPauseMs?'Auto Abzug':'Erfasst'):'Keine Buchung') +'</small></div></div>'+'<div class="grid home-summary">'+metric('KW '+weekNumber(today),signed(w.actual,false),'Wochensoll '+signed(weeklyTarget(state),false))+metric('ZA-Konto',za===null?'–':signed(za),'Tagesaktuell · vorläufig',za===null?'':color(za))+'</div><div class="card home-absence">'+line('Abwesenheit','Urlaub, Krank, Feiertag, Arzt','+',"editCredit(null,'"+today+"')")+'</div>'+(a?(a.pauseStart!==null?btn('Pause beenden',"act('resume')",'full warn'):'')+btn('Arbeit beenden',"act('stop')",'full danger')+btn('Endzeit manuell wählen','openManualEnd()','full')+btn('Weitere Aktionen','openWorkActions()','full home-more'):btn('Arbeit starten',"act('start')",'full primary')+btn('Beginnzeit manuell wählen','openManualStart()','full'));}
+function home(){const now=Date.now(),today=localDay(now),a=state.active,day=a?localDay(a.start):today,d=daily(state,day),w=weekReport(state,weekStart(today),today),za=dailyZABalance(state,today);const t=timerSnapshot(now),start=a?a.start:t.last?t.last.start:null;return '<div class="card home-timer-card"><div class="label">'+(a?'Laufende Arbeitszeit':t.last?'Letzte Arbeitszeit':'Netto-Arbeitszeit')+'</div><div id="timer" class="timer">00:00:00</div><p id="workPhase" class="center '+(a?(a.pauseStart===null?'pos':''):'muted')+'">'+(a?(a.pauseStart===null?'Arbeitszeit läuft':'Pause läuft'):(d.booked?'Tag erfasst':'Bereit zum Einstempeln'))+'</p><div class="track"><div id="bar" class="bar"></div></div><small id="target"></small><div class="daily-total"><span class="muted">Tagessumme '+(day===today?'heute':esc(day))+'</span><strong id="dayTotal">00:00:00</strong></div></div><div class="grid">'+metric('Beginn',start?fmt(start):'–',a?'Aktuelle Buchung':t.last?'Letzte Buchung':'Noch keine Buchung')+'<div class="card"><div class="label">Pause</div><div id="pauseTime" class="num">00:00:00</div><small>'+ (a?((activeFixedWindow(state)||autoDay(day)&&pauseMinimumOn(day)>0)?'Auto Abzug':'Erfasst'):t.last?(t.last.autoPauseMs?'Auto Abzug':'Erfasst'):'Keine Buchung') +'</small></div></div>'+'<div class="grid home-summary">'+metric('KW '+weekNumber(today),signed(w.actual,false),'Wochensoll '+signed(weeklyTarget(state),false)).replace('class="card"','class="card home-week-card"')+metric('ZA-Konto',za===null?'–':signed(za),'Tagesaktuell · vorläufig',za===null?'':color(za))+'</div><div class="card home-absence">'+line('Abwesenheit','Urlaub, Krank, Feiertag, Arzt','+',"editCredit(null,'"+today+"')")+'</div>'+(a?(a.pauseStart!==null?btn('Pause beenden',"act('resume')",'full warn'):'')+btn('Arbeit beenden',"act('stop')",'full danger')+btn('Endzeit manuell wählen','openManualEnd()','full')+btn('Weitere Aktionen','openWorkActions()','full home-more'):btn('Arbeit starten',"act('start')",'full primary')+btn('Beginnzeit manuell wählen','openManualStart()','full'));}
 function isWeekend(day){const wd=dayDate(day).getDay();return wd===0||wd===6;}
 // Read-only calendar projection: never add CKM minutes to daily(), weekReport() or monthReport().
 function calendarCkmMinutes(s,m,enabled){const totals=new Map();if(enabled)for(const e of ckmData(s).entries){if(e.day.slice(0,7)===m)totals.set(e.day,(totals.get(e.day)||0)+ckmDuration(e.start,e.end));}return totals;}
@@ -692,7 +692,7 @@ function openFixedMonthAB(){
 function settings(){
  const today=localDay(Date.now()),back=btn('‹ Settings','openSettingsSection(\'\')','settings-back'),section=(title,body)=>back+'<div class="card"><h2>'+title+'</h2>'+body+'</div>';
  if(settingsSection==='model'||settingsSection==='pause')return section('Arbeitszeitmodell',state.model?modelDetails(state)+'<div class="appearance-divider"></div><h2>Pausenregelung</h2>'+effectivePauseSummary(state,today)+((state.pauseDaysHistory||[]).some(p=>p.from>today)?'<p class="sub muted">Änderung ab künftigem Datum vorgemerkt</p>':'')+btn('Pausenregelung bearbeiten','openPauseSettings()','full')+btn('Arbeitszeitmodell exportieren',"request({type:'profileExport'})",'full')+'<p class="sub muted">Private JSON-Datei mit Modell und Pausenregeln; ohne Buchungen oder CKM-Daten.</p>':profileRequired());
- if(settingsSection==='appearance')return section('Darstellung',themeControl()+'<p class="muted">Farbschema für Kalender und Buttons</p><div class="palette-options">'+[['original','Original'],['pastel','Pastell']].map(([key,label])=>'<button class="palette-choice" aria-pressed="'+(palette===key)+'" onclick="setPalette(\''+key+'\')"><span>'+label+'</span><span class="palette-swatches '+key+'"><i></i><i></i><i></i><i></i></span><span class="palette-mark">'+(palette===key?'✓':'')+'</span></button>').join('')+'</div><p class="sub muted">System folgt automatisch der Darstellung des Geräts. Original und Pastell sind unabhängig davon. Die Auswahl wird nur auf diesem Gerät gespeichert.</p>');
+ if(settingsSection==='appearance')return section('Darstellung',themeControl()+'<p class="muted">Farbschema für Kalender und Buttons</p><div class="palette-options">'+[['original','Original'],['pastel','Pastell']].map(([key,label])=>'<button class="palette-choice" aria-pressed="'+(palette===key)+'" onclick="setPalette(\''+key+'\')"><span>'+label+'</span><span class="palette-swatches '+key+'"><i></i><i></i><i></i><i></i></span><span class="palette-mark">'+(palette===key?'✓':'')+'</span></button>').join('')+'</div><p class="sub muted">System folgt automatisch der Darstellung des Geräts. Original und Pastell sind unabhängig davon. Die Auswahl wird nur auf diesem Gerät gespeichert.</p><div class="appearance-divider"></div><h2>Kartenanordnung</h2><p class="sub muted">Block ca. eine halbe Sekunde gedrückt halten und verschieben. Auf Heute: Karten eines Paares seitlich tauschen, das gesamte Paar nach oben oder unten verschieben. Andere Raster über die Zwischenräume als Gruppe verschieben. Die Reihenfolge wird für jeden Bereich lokal gespeichert.</p>'+btn('Standardanordnung wiederherstellen','resetLayoutOrder()','full')+'<p class="sub muted">Setzt nur die Anordnung aller Bereiche auf den Stand von 3.0.61 zurück. Buchungen, Farben und übrige Einstellungen bleiben erhalten.</p>');
  if(settingsSection==='ckm')return section('CKM',ckmSettings());
  if(settingsSection==='update')return section('App aktualisieren','<div class="report-row"><span>Installierte Version</span><strong>'+VERSION+'</strong></div><p class="sub muted">Nur öffentliche Programmdateien werden geladen. Deine Buchungen und Einstellungen bleiben lokal erhalten. Eine lokale JSON-Sicherung vor Updates wird empfohlen. Nach einem vorbereiteten Update die App im App-Umschalter vollständig schließen und erneut öffnen.</p><button id="updateButton" class="full primary" onclick="checkAppUpdate()"'+(updateBusy?' disabled':'')+'>Nach Updates suchen</button><p id="updateStatus" class="sub muted" role="status" aria-live="polite">'+esc(updateStatus)+'</p>'+btn('Navigationsdiagnose anzeigen','openNavDiagnostic()','full')+'<p class="sub muted">Lokaler Layoutbericht für die Menüleistenprüfung.</p>');
  if(settingsSection==='backup')return section('Datensicherung & Import',btn('JSON-Sicherung',"request({type:'json'})",'full')+btn('Historische Buchungen ergänzen','openHistory()','full')+btn('JSON importieren / wiederherstellen','openImport()','full')+'<p class="sub muted">JSON-Sicherung enthält auch das Arbeitszeitmodell, Pausenregeln und alle CKM-Einträge samt Stundenlohn. Unter „Auf meinem iPhone“ ablegen; Browserdaten können verloren gehen. Darstellung und CKM-Sichtbarkeit sind separate Gerätepräferenzen.</p><p id="offlineStatus" class="sub muted">'+esc(offlineStatus)+'</p>');
@@ -715,7 +715,7 @@ function previewCkm(){const el=$('ckmPreview');if(!el||!form)return;const st=$('
 const NAV_ICONS={"ckm":"<path d=\"M12 3 5.5 10.5H9L3 18h7v3h4v-3h7l-6-7.5h3.5z\"/>","home":"<path d=\"m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z\"/>","calendar":"<rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"2\"/><path d=\"M16 3v4M8 3v4M3 10h18M8 14h2m4 0h2m-8 4h2m4 0h2\"/>","reports":"<path d=\"M3 3v18h18M7 16v-5m5 5V7m5 9V4\"/>","settings":"<circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M9.78 4.73L10.33 2.55L13.67 2.55L14.22 4.73L15.57 5.29L17.51 4.14L19.86 6.49L18.71 8.43L19.27 9.78L21.45 10.33L21.45 13.67L19.27 14.22L18.71 15.57L19.86 17.51L17.51 19.86L15.57 18.71L14.22 19.27L13.67 21.45L10.33 21.45L9.78 19.27L8.43 18.71L6.49 19.86L4.14 17.51L5.29 15.57L4.73 14.22L2.55 13.67L2.55 10.33L4.73 9.78L5.29 8.43L4.14 6.49L6.49 4.14L8.43 5.29z\"/>"};
 function navIcon(p){return '<svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+NAV_ICONS[p]+'</svg>';}
 function profileRequired(){return '<p>Für die reguläre Arbeitszeit ist ein privates Arbeitszeitprofil erforderlich. CKM benötigt kein Profil.</p>'+btn('Privates Profil einrichten','openProfile()','full primary');}
-function render(){if(page==='ckm'&&!ckmVisible)page='home';applyTheme();document.body.dataset.palette=palette;$('nav').dataset.ckmVisible=String(ckmVisible);document.body.classList.toggle('calendar-compact',!!state.model&&page==='calendar');document.body.classList.toggle('home-compact',!!state.model&&page==='home');document.body.classList.toggle('reports-compact',!!state.model&&page==='reports');document.body.classList.toggle('ckm-compact',page==='ckm');const today=localDay(Date.now());$('heading').textContent={home:'Heute',calendar:'Kalender',reports:'Daten',settings:'Settings',ckm:'CKM'}[page];$('subtitle').textContent=page==='home'?today.slice(8,10)+'.'+today.slice(5,7)+'.'+today.slice(2,4):'';$('main').classList.toggle('month-swipe',!!state.model&&(page==='calendar'||page==='reports'));$('main').innerHTML=(!state.model&&['home','calendar','reports'].includes(page))?'<div class="card"><h2>Privates Arbeitszeitprofil erforderlich</h2><p>Importiere dein privates Profil, damit Sollzeit, Pausen und Abrechnungen korrekt berechnet werden. Die Datei bleibt auf diesem Gerät. CKM kann unabhängig davon über den eigenen Reiter verwendet werden.</p>'+btn('Privates Profil einrichten','openProfile()','full primary')+btn('Historische Buchungen ergänzen','openHistory()','full')+btn('Vorhandene JSON-Sicherung importieren','openImport()','full')+btn('Vorhandene Daten sichern',"request({type:'json'})",'full')+'<p id="offlineStatus" class="sub muted">'+esc(offlineStatus)+'</p></div>':({home,calendar,reports,settings,ckm}[page])();$('nav').innerHTML=navItems().map(([p,t])=>'<button class="'+(page===p?'sel':'')+'" onclick="go(\''+p+'\')">'+navIcon(p)+'<span>'+t+'</span>'+'</button>').join('');document.querySelectorAll('#main button').forEach(b=>{if(/request\(|act\(|discard\(|openManualStart\(|openManualEnd\(|openPauseDays\(/ .test(b.getAttribute('onclick')||''))b.dataset.write='1';});syncUI();live();recordNavGeometry('Render');queueViewportSync();}
+function render(){cancelLayoutHold(true);if(page==='ckm'&&!ckmVisible)page='home';applyTheme();document.body.dataset.palette=palette;$('nav').dataset.ckmVisible=String(ckmVisible);document.body.classList.toggle('calendar-compact',!!state.model&&page==='calendar');document.body.classList.toggle('home-compact',!!state.model&&page==='home');document.body.classList.toggle('reports-compact',!!state.model&&page==='reports');document.body.classList.toggle('ckm-compact',page==='ckm');const today=localDay(Date.now());$('heading').textContent={home:'Heute',calendar:'Kalender',reports:'Daten',settings:'Settings',ckm:'CKM'}[page];$('subtitle').textContent=page==='home'?today.slice(8,10)+'.'+today.slice(5,7)+'.'+today.slice(2,4):'';$('main').classList.toggle('month-swipe',!!state.model&&(page==='calendar'||page==='reports'));$('main').innerHTML=(!state.model&&['home','calendar','reports'].includes(page))?'<div class="card"><h2>Privates Arbeitszeitprofil erforderlich</h2><p>Importiere dein privates Profil, damit Sollzeit, Pausen und Abrechnungen korrekt berechnet werden. Die Datei bleibt auf diesem Gerät. CKM kann unabhängig davon über den eigenen Reiter verwendet werden.</p>'+btn('Privates Profil einrichten','openProfile()','full primary')+btn('Historische Buchungen ergänzen','openHistory()','full')+btn('Vorhandene JSON-Sicherung importieren','openImport()','full')+btn('Vorhandene Daten sichern',"request({type:'json'})",'full')+'<p id="offlineStatus" class="sub muted">'+esc(offlineStatus)+'</p></div>':({home,calendar,reports,settings,ckm}[page])();prepareLayout();$('nav').innerHTML=navItems().map(([p,t])=>'<button class="'+(page===p?'sel':'')+'" onclick="go(\''+p+'\')">'+navIcon(p)+'<span>'+t+'</span>'+'</button>').join('');document.querySelectorAll('#main button').forEach(b=>{if(/request\(|act\(|discard\(|openManualStart\(|openManualEnd\(|openPauseDays\(/ .test(b.getAttribute('onclick')||''))b.dataset.write='1';});syncUI();live();recordNavGeometry('Render');queueViewportSync();}
 function field(label,id,type,value,extra=''){return '<label for="'+id+'">'+esc(label)+'</label><input id="'+id+'" type="'+type+'" value="'+esc(value)+'" '+extra+'>';}
 function noteField(note){return '<label for="fNote">Notiz</label><textarea id="fNote" maxlength="1000">'+esc(note)+'</textarea>';}
 function openForm(title,body,kind,id){if(pending)return;form={kind,id};$('overlay').innerHTML='<div class="row dialog-header"><h2>'+esc(title)+'</h2><button class="dialog-close" onclick="closeForm()" aria-label="Schließen">Schließen</button></div><div class="card">'+body+'<p id="formError" class="error"></p>'+(kind?'<button data-write class="full primary" onclick="submitForm()">'+(kind==='manualStart'?'Arbeit starten':kind==='manualEnd'?'Arbeit beenden':'Speichern')+'</button>':'')+(id&&['entry','credit','ckmEntry'].includes(kind)?'<button id="deleteButton" data-write class="full danger" onclick="deleteForm()">Löschen</button><div id="deleteConfirm" class="confirmbox hidden"><p>Buchung dauerhaft löschen?</p><button data-write class="full danger" onclick="confirmDelete()">Endgültig löschen</button><button class="full" onclick="cancelDelete()">Abbrechen</button></div>':'')+'</div>';$('overlay').classList.remove('hidden');$('overlay').scrollTop=0;syncUI();}
@@ -780,6 +780,124 @@ function backSwipeTarget(){
  }
  return page==='settings'&&settingsSection?'settings':null;
 }
+// Local presentation preferences only. Canonical order is frozen at 3.0.61.
+const LAYOUT_KEY='timelog.layout.v1';
+const LAYOUT_DEFAULTS=Object.freeze({home:['timer','startpause','weekza','absence','actions'],homeStart:['start','pause'],homeSummary:['week','za'],calendar:['month','day','ckmDay'],reports:['overview','za','billing','absence','chart','weeks'],reportMetrics:['target','actual','diff','credits'],ckm:['summary','add','table'],ckmMetrics:['hours','wage','tip','total'],settings:['model','ckm','appearance','backup','update']});
+let layoutRegions=[],layoutHold=null,layoutBlockTouch=false,layoutClickUntil=0;
+function readLayoutOrder(){
+ try{const raw=JSON.parse(localStorage.getItem(LAYOUT_KEY)||'{}');return raw&&typeof raw==='object'&&!Array.isArray(raw)?raw:{};}catch{return {};}
+}
+function layoutOrder(region,raw=readLayoutOrder()){
+ const defaults=LAYOUT_DEFAULTS[region]||[],saved=Array.isArray(raw[region])?raw[region]:[];
+ return [...new Set(saved.filter(x=>defaults.includes(x))),...defaults.filter(x=>!saved.includes(x))];
+}
+function saveLayoutOrder(region,order){
+ try{const raw=readLayoutOrder();raw[region]=order;localStorage.setItem(LAYOUT_KEY,JSON.stringify(raw));return true;}
+ catch{error='Anordnung konnte nicht lokal gespeichert werden.';syncUI();return false;}
+}
+function resetLayoutOrder(){
+ if(pending||form||updateBusy)return;
+ try{localStorage.removeItem(LAYOUT_KEY);}catch{error='Standardanordnung konnte nicht wiederhergestellt werden.';syncUI();return;}
+ error='';render();
+}
+function prepareLayout(){
+ layoutRegions=[];const main=$('main'),children=Array.from(main.children),q=sel=>main.querySelector(sel),region=(id,parent,defs,grid=false)=>{
+  if(!parent)return;const groups=defs.map(([id,label,...nodes])=>({id,label,nodes:nodes.filter(Boolean)})).filter(g=>g.nodes.length&&g.nodes.every(n=>n.parentElement===parent));
+  if(!groups.length)return;
+  const r={id,parent,grid,groups};layoutRegions.push(r);
+  groups.forEach(g=>g.nodes.forEach(n=>{n.dataset.layoutRegion=id;n.dataset.layoutId=g.id;}));
+  const order=layoutOrder(id);if(groups.map(g=>g.id).join('|')!==order.filter(id=>groups.some(g=>g.id===id)).join('|'))applyLayoutOrder(r,order,false);
+ };
+ const grid=(id,parent,defs)=>region(id,parent,defs.map(([key,label],i)=>[key,label,parent?.children[i]]),true);
+ if(page==='home'&&state.model){
+  const timer=q('#timer')?.closest('.card'),start=q('#pauseTime')?.closest('.grid'),summary=q('.home-summary'),absence=q('.home-absence');
+  region('home',main,[['timer','Arbeitszeit',timer],['startpause','Beginn & Pause',start],['weekza','Kalenderwoche & ZA',summary],['absence','Abwesenheit',absence],['actions','Arbeitszeit-Aktionen',...children.filter(n=>n.matches('button.full'))]]);
+  grid('homeStart',start,[['start','Beginn'],['pause','Pause']]);grid('homeSummary',summary,[['week','Kalenderwoche'],['za','ZA-Konto']]);
+ }else if(page==='calendar'&&state.model){
+  region('calendar',main,[['month','Kalender',q('.calendar-month')],['day','Tagesdetails',q('.calendar-day')],['ckmDay','CKM-Tagesdetails',q('.calendar-ckm-day')]]);
+ }else if(page==='reports'&&state.model){
+  const overview=q('#main > .grid')||q('.grid'),heading=children.find(n=>n.matches('h2')),cards=children.filter(n=>n.matches('.card')),billing=cards.find(n=>n.querySelector('.report-summary')),weeks=cards.find(n=>n.querySelector('h2')?.textContent==='Kalenderwochen');
+  region('reports',main,[['overview','Kalendermonat',heading,overview],['za','ZA-Konto',q('.za-month')],['billing','Abrechnung',billing],['absence','Abwesenheiten',q('.absence-month')],['chart','Tagessoll im Monatsverlauf',q('.daily-target-card')],['weeks','Kalenderwochen',weeks]]);
+  grid('reportMetrics',overview,[['target','Soll'],['actual','Ist'],['diff','Gebuchte Differenz'],['credits','Gutschriften']]);
+ }else if(page==='ckm'){
+  const summary=q('.ckm-stats');region('ckm',main,[['summary','Zusammenfassung',summary],['add','Eintrag hinzufügen',children.find(n=>n.matches('button.full'))],['table','CKM-Tabelle',q('.ckm-card')]]);
+  grid('ckmMetrics',summary,[['hours','Stunden'],['wage','Gehalt'],['tip','Trinkgeld'],['total','Gesamtverdienst']]);
+ }else if(page==='settings'&&!settingsSection){
+  const menu=q('.settings-menu');region('settings',menu,LAYOUT_DEFAULTS.settings.map(key=>[key,{model:'Arbeitszeitmodell',ckm:'CKM',appearance:'Darstellung',backup:'Datensicherung & Import',update:'App aktualisieren'}[key],menu?.querySelector('button[onclick="openSettingsSection(\''+key+'\')"]')]));
+ }
+}
+function layoutRect(group){const rs=group.nodes.map(n=>n.getBoundingClientRect());return {left:Math.min(...rs.map(r=>r.left)),right:Math.max(...rs.map(r=>r.right)),top:Math.min(...rs.map(r=>r.top)),bottom:Math.max(...rs.map(r=>r.bottom))};}
+function layoutCurrent(r){return r.groups.slice().sort((a,b)=>Array.from(r.parent.children).indexOf(a.nodes[0])-Array.from(r.parent.children).indexOf(b.nodes[0]));}
+function applyLayoutOrder(r,order,animate){
+ const current=layoutCurrent(r),next=order.map(id=>r.groups.find(g=>g.id===id)).filter(Boolean);
+ if(next.length!==current.length||current.every((g,i)=>g===next[i]))return;
+ const nodes=current.flatMap(g=>g.nodes),rects=animate?new Map(nodes.map(n=>[n,n.getBoundingClientRect()])):null;
+ // The unmovable month bar, hints, setup message and footer stay at their original slots.
+ const marker=document.createComment('layout-slot');r.parent.insertBefore(marker,nodes[0]);for(const g of next)for(const n of g.nodes)r.parent.insertBefore(n,marker);marker.remove();
+ if(rects&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches)for(const n of nodes){const a=rects.get(n),b=n.getBoundingClientRect();if(n.animate&&(a.left!==b.left||a.top!==b.top))n.animate([{transform:'translate('+(a.left-b.left)+'px,'+(a.top-b.top)+'px)'},{transform:'none'}],{duration:190,easing:'ease-out'});}
+}
+function layoutAllowed(){return !!db&&!pending&&!form&&!updateBusy&&!document.hidden;}
+function cancelLayoutHold(block=false){
+ const g=layoutHold;layoutHold=null;if(!g)return;clearTimeout(g.timer);if(g.raf)cancelAnimationFrame(g.raf);if(g.active){g.group.nodes.forEach(n=>n.classList.remove('layout-picked'));g.ghost?.remove();g.marker?.remove();document.body.classList.remove('layout-dragging');layoutClickUntil=performance.now()+700;if(block)layoutBlockTouch=true;}
+}
+function layoutCandidate(target,x,y){
+ const el=target.closest('[data-layout-id]');if(!el)return null;
+ const r=layoutRegions.find(r=>r.id===el.dataset.layoutRegion),group=r?.groups.find(g=>g.id===el.dataset.layoutId);if(!group||r.groups.length<2)return null;
+ const rect=layoutRect(group);return {r,group,x,y,offsetX:(rect.left+rect.right)/2-x,offsetY:(rect.top+rect.bottom)/2-y,fx:x,fy:y,active:false,index:layoutCurrent(r).indexOf(group)};
+}
+function layoutPreview(g){
+ if(!g.active)return;
+ // The two paired Home rows can be rearranged horizontally, or moved as
+ // complete groups by dragging vertically after the long press.
+ if((g.r.id==='homeStart'||g.r.id==='homeSummary')&&Math.abs(g.fy-g.y)>=18&&Math.abs(g.fy-g.y)>Math.abs(g.fx-g.x)*1.4){
+  const outer=layoutCandidate(g.r.parent,g.x,g.y);
+  if(outer){g.group.nodes.forEach(n=>n.classList.remove('layout-picked'));g.r=outer.r;g.group=outer.group;g.offsetX=outer.offsetX;g.offsetY=outer.offsetY;g.group.nodes.forEach(n=>n.classList.add('layout-picked'));g.ghost.textContent='↕ '+g.group.label;}
+ }
+ const all=layoutCurrent(g.r),others=all.filter(x=>x!==g.group),cx=g.fx+g.offsetX,cy=g.fy+g.offsetY;
+ if(Math.hypot(g.fx-g.x,g.fy-g.y)<12&&!g.scrolled){g.index=all.indexOf(g.group);g.marker.hidden=true;}
+ else if(g.r.grid){
+  let best=all[0],dist=Infinity;for(const item of all){const r=layoutRect(item),d=Math.hypot(cx-(r.left+r.right)/2,cy-(r.top+r.bottom)/2);if(d<dist){dist=d;best=item;}}
+  g.index=all.indexOf(best);const r=layoutRect(best);g.marker.hidden=best===g.group;Object.assign(g.marker.style,{left:r.left+'px',top:r.top+'px',width:(r.right-r.left)+'px',height:(r.bottom-r.top)+'px'});g.marker.className='layout-marker layout-grid-marker';
+ }else{
+  g.index=others.filter(item=>{const r=layoutRect(item);return cy>(r.top+r.bottom)/2;}).length;
+  const next=others[g.index],prev=others[g.index-1],rect=layoutRect(next||prev);const at=next?rect.top:rect.bottom;g.marker.hidden=g.index===all.indexOf(g.group);Object.assign(g.marker.style,{left:rect.left+'px',top:(at-2)+'px',width:(rect.right-rect.left)+'px',height:'4px'});g.marker.className='layout-marker';
+ }
+ const vw=window.visualViewport?.width||innerWidth,vh=window.visualViewport?.height||innerHeight;const w=g.ghost.offsetWidth,h=g.ghost.offsetHeight;g.ghost.style.left=Math.max(4,Math.min(vw-w-4,g.fx-w/2))+'px';g.ghost.style.top=Math.max(4,Math.min(vh-h-4,g.fy+16))+'px';
+}
+function beginLayoutDrag(g){
+ if(layoutHold!==g||!layoutAllowed()||!g.group.nodes.every(n=>n.isConnected))return;
+ g.active=true;g.group.nodes.forEach(n=>n.classList.add('layout-picked'));document.body.classList.add('layout-dragging');g.ghost=document.createElement('div');g.ghost.className='layout-ghost';g.ghost.setAttribute('aria-hidden','true');g.ghost.textContent='↕ '+g.group.label;g.marker=document.createElement('div');g.marker.className='layout-marker';g.marker.setAttribute('aria-hidden','true');document.body.append(g.marker,g.ghost);layoutPreview(g);
+ const tick=()=>{if(layoutHold!==g)return;if(!layoutAllowed()){cancelLayoutHold(true);return;}const nav=$('nav').getBoundingClientRect(),top=window.visualViewport?.offsetTop||0,edge=65,upper=top+edge,lower=nav.top-edge;let d=0;if(g.fy<upper)d=-Math.min(15,(upper-g.fy)/3);else if(g.fy>lower)d=Math.min(15,(g.fy-lower)/3);if(d&&Math.hypot(g.fx-g.x,g.fy-g.y)>=12){const old=scrollY;window.scrollBy(0,d);if(scrollY!==old){g.scrolled=true;layoutPreview(g);}}g.raf=requestAnimationFrame(tick);};g.raf=requestAnimationFrame(tick);
+}
+function commitLayoutDrag(g){
+ const current=layoutCurrent(g.r),from=current.indexOf(g.group);if(g.index===from)return;
+ const visible=current.filter(x=>x!==g.group);visible.splice(g.index,0,g.group);const next=visible.map(x=>x.id),full=layoutOrder(g.r.id);let i=0;const merged=full.map(id=>next.includes(id)?next[i++]:id);
+ if(saveLayoutOrder(g.r.id,merged))applyLayoutOrder(g.r,merged,true);
+}
+function setupLayoutDrag(){
+ const stop=e=>{if(e.cancelable)e.preventDefault();e.stopImmediatePropagation();};
+ document.addEventListener('touchstart',e=>{
+  if(layoutHold?.active){cancelLayoutHold(true);stop(e);return;}
+  cancelLayoutHold();if(e.touches.length!==1)return;layoutBlockTouch=false;layoutClickUntil=0;
+  if(!layoutAllowed()||!e.target.closest('#main')||e.target.closest('input,textarea,select,[contenteditable],a,summary,.calendar button,.ckm-table tbody'))return;
+  const t=e.touches[0];if(isBackEdge(t.clientX))return;const g=layoutCandidate(e.target,t.clientX,t.clientY);if(!g)return;g.id=t.identifier;g.page=page;layoutHold=g;g.timer=setTimeout(()=>beginLayoutDrag(g),500);
+ },{capture:true,passive:false});
+ document.addEventListener('touchmove',e=>{
+  if(layoutBlockTouch){stop(e);return;}const g=layoutHold;if(!g)return;const t=e.touches[0];if(e.touches.length!==1||!t||t.identifier!==g.id||!layoutAllowed()||page!==g.page){cancelLayoutHold(g.active);if(g.active)stop(e);return;}
+  if(!g.active){if(Math.hypot(t.clientX-g.x,t.clientY-g.y)>10)cancelLayoutHold();return;}
+  stop(e);g.fx=t.clientX;g.fy=t.clientY;layoutPreview(g);
+ },{capture:true,passive:false});
+ document.addEventListener('touchend',e=>{
+  if(layoutBlockTouch){stop(e);if(!e.touches.length){layoutBlockTouch=false;layoutClickUntil=performance.now()+700;}return;}
+  const g=layoutHold;if(!g)return;if(!g.active){cancelLayoutHold();return;}stop(e);const t=Array.from(e.changedTouches).find(t=>t.identifier===g.id),valid=t&&!e.touches.length&&layoutAllowed()&&page===g.page;
+  if(valid){g.fx=t.clientX;g.fy=t.clientY;layoutPreview(g);}cancelLayoutHold();if(valid)commitLayoutDrag(g);
+ },{capture:true,passive:false});
+ document.addEventListener('touchcancel',e=>{const active=layoutHold?.active;if(active||layoutBlockTouch){stop(e);layoutClickUntil=performance.now()+700;}cancelLayoutHold();layoutBlockTouch=false;},{capture:true,passive:false});
+ document.addEventListener('contextmenu',e=>{if(layoutHold||layoutBlockTouch)stop(e);},{capture:true});
+ document.addEventListener('click',e=>{if(layoutHold?.active||layoutBlockTouch||(e.detail!==0&&performance.now()<layoutClickUntil))stop(e);},{capture:true});
+ window.addEventListener('blur',()=>cancelLayoutHold(true));document.addEventListener('visibilitychange',()=>{if(document.hidden)cancelLayoutHold(true);});
+}
+
 function setupBackSwipe(){
  let gesture=null;
  const reset=()=>{gesture=null;};
@@ -946,5 +1064,5 @@ async function checkAppUpdate(){
  finally{updateBusy=false;showUpdateStatus(updateStatus);}
 }
 async function offlineSetup(){try{assert('serviceWorker' in navigator,'Offline-Funktion benötigt HTTPS.');await navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'});await Promise.race([navigator.serviceWorker.ready,new Promise((_,reject)=>setTimeout(()=>reject(new Error('Offline-Installation noch nicht abgeschlossen; bitte online neu öffnen.')),15000))]);offlineStatus='Offline-Dateien installiert. Offline-Start nach Schließen testen.';if(navigator.storage&&navigator.storage.persist){const yes=await navigator.storage.persist().catch(()=>false);offlineStatus+=' Dauerhafter Speicher: '+(yes?'gewährt':'nicht bestätigt')+'.';}}catch(e){offlineStatus='Offline-Installation nicht bestätigt: '+String(e.message||e);}if($('offlineStatus'))$('offlineStatus').textContent=offlineStatus;}
-async function init(){try{applyTheme();setupSystemTheme();db=await openDB();const loaded=await readState();state=loaded||emptyState();saved=state.revision;status='Lokal gespeichert';render();setupNavViewport();setupBackSwipe();setupMonthSwipe();setupNavSwipe();setInterval(live,250);offlineSetup();}catch(e){if(db)db.close();db=null;status='Speicher nicht verfügbar';error=String(e.message||e);$('heading').textContent='Speicherfehler';$('main').textContent='Es wird nichts überschrieben. Bitte App erneut öffnen.';syncUI();}}
+async function init(){try{applyTheme();setupSystemTheme();db=await openDB();const loaded=await readState();state=loaded||emptyState();saved=state.revision;status='Lokal gespeichert';render();setupNavViewport();setupLayoutDrag();setupBackSwipe();setupMonthSwipe();setupNavSwipe();setInterval(live,250);offlineSetup();}catch(e){if(db)db.close();db=null;status='Speicher nicht verfügbar';error=String(e.message||e);$('heading').textContent='Speicherfehler';$('main').textContent='Es wird nichts überschrieben. Bitte App erneut öffnen.';syncUI();}}
 init();

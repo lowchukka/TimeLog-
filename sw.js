@@ -1,4 +1,4 @@
-const VERSION='3.0.61';
+const VERSION='3.0.62';
 const CACHE='arbeitszeit-'+VERSION;
 // One-time bridge from pre-update-button versions. Set false in subsequent releases.
 const BOOTSTRAP_ACTIVATE=false;
